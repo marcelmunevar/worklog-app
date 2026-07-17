@@ -1,11 +1,14 @@
-import Image from "next/image";
+import { db } from "@/db";
+import { projects } from "@/db/schema";
 
-export default function Home() {
+export default async function Home() {
+  const data = await db.select().from(projects);
+
   return (
-    <div>
-      <main>
-        <p>test</p>
-      </main>
-    </div>
+    <main>
+      <h1>Projects</h1>
+
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </main>
   );
 }
