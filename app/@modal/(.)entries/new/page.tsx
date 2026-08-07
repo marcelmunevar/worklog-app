@@ -1,9 +1,10 @@
 import { db } from "@/db";
 import { projects } from "@/db/schema";
-import { Button, Paper, Stack, Typography } from "@mui/material";
+import { Paper, Stack, Typography } from "@mui/material";
 import { asc } from "drizzle-orm";
 import ModalShell from "@/app/@modal/modal-shell";
 import ModalCloseButton from "@/app/components/modal-close-button";
+import NavButton from "@/app/components/nav-button";
 import { createEntry } from "@/app/entries/new/actions";
 import CreateEntryForm from "@/app/entries/new/create-entry-form";
 
@@ -21,9 +22,9 @@ export default async function NewEntryModalPage() {
             You need at least one project before creating an entry.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
-            <Button href="/projects/new" variant="contained">
+            <NavButton href="/projects/new" variant="contained">
               Create project
-            </Button>
+            </NavButton>
             <ModalCloseButton label="Close" />
           </Stack>
         </Paper>

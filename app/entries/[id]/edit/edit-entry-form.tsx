@@ -87,7 +87,7 @@ export default function EditEntryForm({
           type="date"
           defaultValue={entry.workDate}
           required
-          InputLabelProps={{ shrink: true }}
+          slotProps={{ inputLabel: { shrink: true } }}
         />
 
         <TextField

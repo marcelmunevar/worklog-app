@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { clients, projectClients } from "@/db/schema";
+import NavButton from "@/app/components/nav-button";
 import {
-  Button,
   Container,
   Paper,
   Stack,
@@ -47,26 +47,25 @@ export default async function ClientsPage() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{ justifyContent: "space-between", mb: 3 }}
       >
         <Typography variant="h4" component="h1">
           Clients
         </Typography>
-        <Stack direction="row" spacing={1} flexWrap="wrap">
-          <Button href="/clients/new" variant="contained">
+        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+          <NavButton href="/clients/new" variant="contained">
             Add client
-          </Button>
-          <Button href="/entries" variant="outlined">
+          </NavButton>
+          <NavButton href="/entries" variant="outlined">
             Entries
-          </Button>
-          <Button href="/projects" variant="outlined">
+          </NavButton>
+          <NavButton href="/projects" variant="outlined">
             Projects
-          </Button>
-          <Button href="/clients" variant="outlined">
+          </NavButton>
+          <NavButton href="/clients" variant="outlined">
             Clients
-          </Button>
+          </NavButton>
         </Stack>
       </Stack>
 
@@ -98,13 +97,13 @@ export default async function ClientsPage() {
                     {client.projectCount}
                   </TableCell>
                   <TableCell>
-                    <Button
+                    <NavButton
                       href={`/clients/${client.id}/edit`}
                       variant="outlined"
                       size="small"
                     >
                       Edit
-                    </Button>
+                    </NavButton>
                   </TableCell>
                 </TableRow>
               ))}

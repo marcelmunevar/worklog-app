@@ -76,7 +76,7 @@ export default function CreateEntryForm({
           label="Date"
           type="date"
           required
-          InputLabelProps={{ shrink: true }}
+          slotProps={{ inputLabel: { shrink: true } }}
         />
 
         <TextField
