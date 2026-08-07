@@ -53,6 +53,12 @@ export default async function ProjectsPage() {
           >
             Projects
           </Link>
+          <Link
+            href="/clients"
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
+          >
+            Clients
+          </Link>
         </div>
       </div>
 
@@ -80,6 +86,9 @@ export default async function ProjectsPage() {
                 <th className="px-4 py-3 text-left text-sm font-semibold">
                   Entries
                 </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-(--border) bg-(--surface)">
@@ -99,6 +108,14 @@ export default async function ProjectsPage() {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-semibold">
                     {project.entryCount}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <Link
+                      href={`/projects/${project.id}/edit`}
+                      className="inline-flex rounded-md border border-(--border) px-3 py-1.5 font-medium hover:bg-(--surface-muted)"
+                    >
+                      Edit
+                    </Link>
                   </td>
                 </tr>
               ))}
