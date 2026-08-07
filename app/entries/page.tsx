@@ -1,7 +1,10 @@
+import DateRangeFilter from "@/app/components/date-range-filter";
+import { getDateFilterState } from "@/app/components/date-filter-utils";
+import NavButton from "@/app/components/nav-button";
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
-import NavButton from "@/app/components/nav-button";
 import {
+  Box,
   Container,
   Paper,
   Stack,
@@ -13,9 +16,22 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 
-export default async function EntriesPage() {
+type EntriesPageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function EntriesPage({ searchParams }: EntriesPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const dateFilter = getDateFilterState(resolvedSearchParams);
+  const whereClause = dateFilter.isActive
+    ? and(
+        gte(dailyEntries.workDate, dateFilter.dateFrom),
+        lte(dailyEntries.workDate, dateFilter.dateTo),
+      )
+    : undefined;
+
   const entries = await db
     .select({
       id: dailyEntries.id,
@@ -27,33 +43,47 @@ export default async function EntriesPage() {
     })
     .from(dailyEntries)
     .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
+    .where(whereClause)
     .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{ justifyContent: "space-between", mb: 3 }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1">
           Daily Entries
         </Typography>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "flex-start" },
+            width: 1,
+            mt: 1.5,
+          }}
+        >
           <NavButton href="/entries/new" variant="contained">
             Add entry
           </NavButton>
-          <NavButton href="/entries" variant="outlined">
-            Entries
-          </NavButton>
-          <NavButton href="/projects" variant="outlined">
-            Projects
-          </NavButton>
-          <NavButton href="/clients" variant="outlined">
-            Clients
-          </NavButton>
+
+          <Box
+            sx={{
+              minWidth: 0,
+              flexGrow: { sm: 1 },
+              display: "flex",
+              justifyContent: { sm: "flex-end" },
+            }}
+          >
+            <DateRangeFilter
+              key={`${dateFilter.preset}:${dateFilter.dateFrom}:${dateFilter.dateTo}`}
+              preset={dateFilter.preset}
+              dateFrom={dateFilter.dateFrom}
+              dateTo={dateFilter.dateTo}
+            />
+          </Box>
         </Stack>
-      </Stack>
+      </Box>
 
       {entries.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>

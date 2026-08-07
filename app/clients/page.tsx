@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { clients, projectClients } from "@/db/schema";
 import NavButton from "@/app/components/nav-button";
 import {
+  Box,
   Container,
   Paper,
   Stack,
@@ -45,29 +46,17 @@ export default async function ClientsPage() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{ justifyContent: "space-between", mb: 3 }}
-      >
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1">
           Clients
         </Typography>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+
+        <Box sx={{ mt: 1.5 }}>
           <NavButton href="/clients/new" variant="contained">
             Add client
           </NavButton>
-          <NavButton href="/entries" variant="outlined">
-            Entries
-          </NavButton>
-          <NavButton href="/projects" variant="outlined">
-            Projects
-          </NavButton>
-          <NavButton href="/clients" variant="outlined">
-            Clients
-          </NavButton>
-        </Stack>
-      </Stack>
+        </Box>
+      </Box>
 
       {clientList.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
