@@ -4,6 +4,7 @@ import NavButton from "@/app/components/nav-button";
 import {
   Box,
   Button,
+  Chip,
   Paper,
   Stack,
   Table,
@@ -22,7 +23,9 @@ type EntryRow = {
   projectName: string;
   title: string;
   description: string;
-  deleteAction: () => Promise<void>;
+  isDeleted: boolean;
+  isProjectDeleted: boolean;
+  deleteAction?: () => Promise<void>;
 };
 
 type SortColumn = "workDate" | "projectName" | "title" | "description";
@@ -113,35 +116,98 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
         </TableHead>
         <TableBody>
           {sortedRows.map((entry) => (
-            <TableRow key={entry.id}>
+            <TableRow
+              key={entry.id}
+              sx={
+                entry.isDeleted || entry.isProjectDeleted
+                  ? { opacity: 0.7 }
+                  : undefined
+              }
+            >
               <TableCell>{entry.workDate}</TableCell>
               <TableCell sx={{ fontWeight: 500 }}>
-                {entry.projectName}
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center" }}
+                >
+                  <Box component="span">{entry.projectName}</Box>
+                  {entry.isProjectDeleted ? (
+                    <Chip
+                      color="default"
+                      label="Project deleted"
+                      size="small"
+                    />
+                  ) : null}
+                </Stack>
               </TableCell>
-              <TableCell>{entry.title}</TableCell>
+              <TableCell>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center" }}
+                >
+                  <Box component="span">{entry.title}</Box>
+                  {entry.isDeleted ? (
+                    <Chip color="default" label="Deleted" size="small" />
+                  ) : null}
+                </Stack>
+              </TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {entry.description || "-"}
               </TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1}>
-                  <NavButton
-                    href={`/entries/${entry.id}/edit`}
-                    variant="outlined"
+                {entry.isDeleted ? (
+                  <Chip
+                    color="default"
+                    label="Soft deleted"
                     size="small"
-                  >
-                    Edit
-                  </NavButton>
-                  <Box component="form" action={entry.deleteAction}>
-                    <Button
-                      color="error"
+                    variant="outlined"
+                  />
+                ) : entry.isProjectDeleted ? (
+                  <Stack direction="row" spacing={1}>
+                    <Chip
+                      color="default"
+                      label="Project deleted"
                       size="small"
-                      type="submit"
                       variant="outlined"
+                    />
+                    {entry.deleteAction ? (
+                      <Box component="form" action={entry.deleteAction}>
+                        <Button
+                          color="error"
+                          size="small"
+                          type="submit"
+                          variant="outlined"
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                ) : (
+                  <Stack direction="row" spacing={1}>
+                    <NavButton
+                      href={`/entries/${entry.id}/edit`}
+                      variant="outlined"
+                      size="small"
                     >
-                      Delete
-                    </Button>
-                  </Box>
-                </Stack>
+                      Edit
+                    </NavButton>
+                    {entry.deleteAction ? (
+                      <Box component="form" action={entry.deleteAction}>
+                        <Button
+                          color="error"
+                          size="small"
+                          type="submit"
+                          variant="outlined"
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                )}
               </TableCell>
             </TableRow>
           ))}

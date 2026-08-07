@@ -3,6 +3,7 @@ import { getDateFilterState } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
 import { deleteEntry } from "./[id]/edit/actions";
 import EntriesTable from "./entries-table";
+import ShowDeletedToggle from "./show-deleted-toggle";
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
@@ -15,13 +16,16 @@ type EntriesPageProps = {
 export default async function EntriesPage({ searchParams }: EntriesPageProps) {
   const resolvedSearchParams = await searchParams;
   const dateFilter = getDateFilterState(resolvedSearchParams);
+  const showDeleted = resolvedSearchParams.showDeleted === "true";
   const whereClause = dateFilter.isActive
     ? and(
-        isNull(dailyEntries.deletedAt),
+        showDeleted ? undefined : isNull(dailyEntries.deletedAt),
         gte(dailyEntries.workDate, dateFilter.dateFrom),
         lte(dailyEntries.workDate, dateFilter.dateTo),
       )
-    : isNull(dailyEntries.deletedAt);
+    : showDeleted
+      ? undefined
+      : isNull(dailyEntries.deletedAt);
 
   const entries = await db
     .select({
@@ -31,12 +35,11 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       workDate: dailyEntries.workDate,
       projectName: projects.name,
       createdAt: dailyEntries.createdAt,
+      deletedAt: dailyEntries.deletedAt,
+      projectDeletedAt: projects.deletedAt,
     })
     .from(dailyEntries)
-    .innerJoin(
-      projects,
-      and(eq(dailyEntries.projectId, projects.id), isNull(projects.deletedAt)),
-    )
+    .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
     .where(whereClause)
     .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
 
@@ -46,7 +49,11 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     projectName: entry.projectName,
     title: entry.title,
     description: entry.description ?? "",
-    deleteAction: deleteEntry.bind(null, entry.id),
+    isDeleted: entry.deletedAt !== null,
+    isProjectDeleted: entry.projectDeletedAt !== null,
+    deleteAction: entry.deletedAt
+      ? undefined
+      : deleteEntry.bind(null, entry.id),
   }));
 
   return (
@@ -95,6 +102,10 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       ) : (
         <EntriesTable rows={entryRows} />
       )}
+
+      <Box sx={{ mt: 1.5 }}>
+        <ShowDeletedToggle checked={showDeleted} />
+      </Box>
     </Container>
   );
 }

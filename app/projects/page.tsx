@@ -6,6 +6,7 @@ import {
   toInclusiveTimestampBounds,
 } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
+import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
 import { deleteProject } from "./[id]/edit/actions";
 import ProjectsTable from "./projects-table";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
@@ -32,6 +33,7 @@ export default async function ProjectsPage({
 }: ProjectsPageProps) {
   const resolvedSearchParams = await searchParams;
   const dateFilter = getDateFilterState(resolvedSearchParams);
+  const showDeleted = resolvedSearchParams.showDeleted === "true";
   const whereClause = dateFilter.isActive
     ? (() => {
         const { from, to } = toInclusiveTimestampBounds(
@@ -40,12 +42,14 @@ export default async function ProjectsPage({
         );
 
         return and(
-          isNull(projects.deletedAt),
+          showDeleted ? undefined : isNull(projects.deletedAt),
           gte(projects.createdAt, from),
           lte(projects.createdAt, to),
         );
       })()
-    : isNull(projects.deletedAt);
+    : showDeleted
+      ? undefined
+      : isNull(projects.deletedAt);
 
   const projectList = await db
     .select({
@@ -54,6 +58,7 @@ export default async function ProjectsPage({
       description: projects.description,
       status: projects.status,
       createdAt: projects.createdAt,
+      deletedAt: projects.deletedAt,
       entryCount: sql<number>`count(${dailyEntries.id})`.mapWith(Number),
     })
     .from(projects)
@@ -82,7 +87,10 @@ export default async function ProjectsPage({
     createdAtLabel: formatDate(project.createdAt),
     createdAtSortValue: project.createdAt?.getTime() ?? 0,
     entryCount: project.entryCount,
-    deleteAction: deleteProject.bind(null, project.id),
+    isDeleted: project.deletedAt !== null,
+    deleteAction: project.deletedAt
+      ? undefined
+      : deleteProject.bind(null, project.id),
   }));
 
   return (
@@ -131,6 +139,13 @@ export default async function ProjectsPage({
       ) : (
         <ProjectsTable rows={projectRows} />
       )}
+
+      <Box sx={{ mt: 1.5 }}>
+        <ShowDeletedToggle
+          checked={showDeleted}
+          label="Show soft deleted projects"
+        />
+      </Box>
     </Container>
   );
 }

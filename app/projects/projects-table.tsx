@@ -4,6 +4,7 @@ import NavButton from "@/app/components/nav-button";
 import {
   Box,
   Button,
+  Chip,
   Paper,
   Stack,
   Table,
@@ -24,7 +25,8 @@ type ProjectRow = {
   createdAtLabel: string;
   createdAtSortValue: number;
   entryCount: number;
-  deleteAction: () => Promise<void>;
+  isDeleted: boolean;
+  deleteAction?: () => Promise<void>;
 };
 
 type SortColumn =
@@ -140,8 +142,22 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
         </TableHead>
         <TableBody>
           {sortedRows.map((project) => (
-            <TableRow key={project.id}>
-              <TableCell sx={{ fontWeight: 500 }}>{project.name}</TableCell>
+            <TableRow
+              key={project.id}
+              sx={project.isDeleted ? { opacity: 0.7 } : undefined}
+            >
+              <TableCell sx={{ fontWeight: 500 }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center" }}
+                >
+                  <Box component="span">{project.name}</Box>
+                  {project.isDeleted ? (
+                    <Chip color="default" label="Deleted" size="small" />
+                  ) : null}
+                </Stack>
+              </TableCell>
               <TableCell>{project.status}</TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {project.description || "-"}
@@ -151,25 +167,36 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
                 {project.entryCount}
               </TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1}>
-                  <NavButton
-                    href={`/projects/${project.id}/edit`}
-                    variant="outlined"
+                {project.isDeleted ? (
+                  <Chip
+                    color="default"
+                    label="Soft deleted"
                     size="small"
-                  >
-                    Edit
-                  </NavButton>
-                  <Box component="form" action={project.deleteAction}>
-                    <Button
-                      color="error"
-                      size="small"
-                      type="submit"
+                    variant="outlined"
+                  />
+                ) : (
+                  <Stack direction="row" spacing={1}>
+                    <NavButton
+                      href={`/projects/${project.id}/edit`}
                       variant="outlined"
+                      size="small"
                     >
-                      Delete
-                    </Button>
-                  </Box>
-                </Stack>
+                      Edit
+                    </NavButton>
+                    {project.deleteAction ? (
+                      <Box component="form" action={project.deleteAction}>
+                        <Button
+                          color="error"
+                          size="small"
+                          type="submit"
+                          variant="outlined"
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                )}
               </TableCell>
             </TableRow>
           ))}

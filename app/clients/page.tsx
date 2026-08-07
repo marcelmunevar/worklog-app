@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
 import NavButton from "@/app/components/nav-button";
+import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
 import { deleteClient } from "./[id]/edit/actions";
 import ClientsTable from "./clients-table";
 import { Box, Container, Paper, Typography } from "@mui/material";
@@ -18,13 +19,21 @@ function formatDate(dateValue: Date | null) {
   }).format(dateValue);
 }
 
-export default async function ClientsPage() {
+type ClientsPageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function ClientsPage({ searchParams }: ClientsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const showDeleted = resolvedSearchParams.showDeleted === "true";
+
   const clientList = await db
     .select({
       id: clients.id,
       name: clients.name,
       acronym: clients.acronym,
       createdAt: clients.createdAt,
+      deletedAt: clients.deletedAt,
       projectCount: sql<number>`count(${projects.id})`.mapWith(Number),
     })
     .from(clients)
@@ -36,7 +45,7 @@ export default async function ClientsPage() {
         isNull(projects.deletedAt),
       ),
     )
-    .where(isNull(clients.deletedAt))
+    .where(showDeleted ? undefined : isNull(clients.deletedAt))
     .groupBy(clients.id, clients.name, clients.acronym, clients.createdAt)
     .orderBy(desc(clients.createdAt));
 
@@ -47,7 +56,10 @@ export default async function ClientsPage() {
     createdAtLabel: formatDate(client.createdAt),
     createdAtSortValue: client.createdAt?.getTime() ?? 0,
     projectCount: client.projectCount,
-    deleteAction: deleteClient.bind(null, client.id),
+    isDeleted: client.deletedAt !== null,
+    deleteAction: client.deletedAt
+      ? undefined
+      : deleteClient.bind(null, client.id),
   }));
 
   return (
@@ -71,6 +83,13 @@ export default async function ClientsPage() {
       ) : (
         <ClientsTable rows={clientRows} />
       )}
+
+      <Box sx={{ mt: 1.5 }}>
+        <ShowDeletedToggle
+          checked={showDeleted}
+          label="Show soft deleted clients"
+        />
+      </Box>
     </Container>
   );
 }

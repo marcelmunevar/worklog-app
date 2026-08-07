@@ -4,6 +4,7 @@ import NavButton from "@/app/components/nav-button";
 import {
   Box,
   Button,
+  Chip,
   Paper,
   Stack,
   Table,
@@ -23,7 +24,8 @@ type ClientRow = {
   createdAtLabel: string;
   createdAtSortValue: number;
   projectCount: number;
-  deleteAction: () => Promise<void>;
+  isDeleted: boolean;
+  deleteAction?: () => Promise<void>;
 };
 
 type SortColumn = "name" | "acronym" | "createdAtSortValue" | "projectCount";
@@ -123,8 +125,22 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
         </TableHead>
         <TableBody>
           {sortedRows.map((client) => (
-            <TableRow key={client.id}>
-              <TableCell sx={{ fontWeight: 500 }}>{client.name}</TableCell>
+            <TableRow
+              key={client.id}
+              sx={client.isDeleted ? { opacity: 0.7 } : undefined}
+            >
+              <TableCell sx={{ fontWeight: 500 }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ alignItems: "center" }}
+                >
+                  <Box component="span">{client.name}</Box>
+                  {client.isDeleted ? (
+                    <Chip color="default" label="Deleted" size="small" />
+                  ) : null}
+                </Stack>
+              </TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {client.acronym || "-"}
               </TableCell>
@@ -133,25 +149,36 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
                 {client.projectCount}
               </TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1}>
-                  <NavButton
-                    href={`/clients/${client.id}/edit`}
-                    variant="outlined"
+                {client.isDeleted ? (
+                  <Chip
+                    color="default"
+                    label="Soft deleted"
                     size="small"
-                  >
-                    Edit
-                  </NavButton>
-                  <Box component="form" action={client.deleteAction}>
-                    <Button
-                      color="error"
-                      size="small"
-                      type="submit"
+                    variant="outlined"
+                  />
+                ) : (
+                  <Stack direction="row" spacing={1}>
+                    <NavButton
+                      href={`/clients/${client.id}/edit`}
                       variant="outlined"
+                      size="small"
                     >
-                      Delete
-                    </Button>
-                  </Box>
-                </Stack>
+                      Edit
+                    </NavButton>
+                    {client.deleteAction ? (
+                      <Box component="form" action={client.deleteAction}>
+                        <Button
+                          color="error"
+                          size="small"
+                          type="submit"
+                          variant="outlined"
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    ) : null}
+                  </Stack>
+                )}
               </TableCell>
             </TableRow>
           ))}
