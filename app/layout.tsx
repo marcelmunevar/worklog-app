@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
+import MuiProvider from "./mui-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -22,10 +22,12 @@ export default function RootLayout({
   modal: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        {children}
-        {modal}
+    <html lang="en">
+      <body>
+        <MuiProvider>
+          {children}
+          {modal}
+        </MuiProvider>
       </body>
     </html>
   );

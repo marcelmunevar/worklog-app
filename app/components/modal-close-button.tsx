@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 
 type ModalCloseButtonProps = {
@@ -10,12 +11,8 @@ export default function ModalCloseButton({ label }: ModalCloseButtonProps) {
   const router = useRouter();
 
   return (
-    <button
-      type="button"
-      onClick={() => router.back()}
-      className="rounded-md border border-(--border) px-4 py-2 text-sm font-medium hover:bg-(--surface-muted)"
-    >
+    <Button type="button" variant="outlined" onClick={() => router.back()}>
       {label}
-    </button>
+    </Button>
   );
 }

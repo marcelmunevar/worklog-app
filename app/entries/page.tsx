@@ -1,7 +1,19 @@
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
+import {
+  Button,
+  Container,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from "@mui/material";
 import { desc, eq } from "drizzle-orm";
-import Link from "next/link";
 
 export default async function EntriesPage() {
   const entries = await db
@@ -18,90 +30,74 @@ export default async function EntriesPage() {
     .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
 
   return (
-    <main className="mx-auto w-full max-w-4xl p-6 md:p-10">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">Daily Entries</h1>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/entries/new"
-            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
-          >
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 3 }}
+      >
+        <Typography variant="h4" component="h1">
+          Daily Entries
+        </Typography>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Button href="/entries/new" variant="contained">
             Add entry
-          </Link>
-          <Link
-            href="/entries"
-            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
-          >
+          </Button>
+          <Button href="/entries" variant="outlined">
             Entries
-          </Link>
-          <Link
-            href="/projects"
-            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
-          >
+          </Button>
+          <Button href="/projects" variant="outlined">
             Projects
-          </Link>
-          <Link
-            href="/clients"
-            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
-          >
+          </Button>
+          <Button href="/clients" variant="outlined">
             Clients
-          </Link>
-        </div>
-      </div>
+          </Button>
+        </Stack>
+      </Stack>
 
       {entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-(--border) p-6 text-(--muted-foreground)">
-          No entries yet.
-        </p>
+        <Paper variant="outlined" sx={{ p: 3 }}>
+          <Typography color="text.secondary">No entries yet.</Typography>
+        </Paper>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-(--border) bg-(--surface)">
-          <table className="min-w-full divide-y divide-(--border)">
-            <thead className="bg-(--surface-muted)">
-              <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Date
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Project
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Title
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Description
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-(--border) bg-(--surface)">
+        <TableContainer component={Paper} variant="outlined">
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Date</TableCell>
+                <TableCell>Project</TableCell>
+                <TableCell>Title</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {entries.map((entry) => (
-                <tr key={entry.id}>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    {entry.workDate}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium">
+                <TableRow key={entry.id}>
+                  <TableCell>{entry.workDate}</TableCell>
+                  <TableCell sx={{ fontWeight: 500 }}>
                     {entry.projectName}
-                  </td>
-                  <td className="px-4 py-3 text-sm">{entry.title}</td>
-                  <td className="px-4 py-3 text-sm text-(--muted-foreground)">
+                  </TableCell>
+                  <TableCell>{entry.title}</TableCell>
+                  <TableCell sx={{ color: "text.secondary" }}>
                     {entry.description || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <Link
+                  </TableCell>
+                  <TableCell>
+                    <Button
                       href={`/entries/${entry.id}/edit`}
-                      className="inline-flex rounded-md border border-(--border) px-3 py-1.5 font-medium hover:bg-(--surface-muted)"
+                      variant="outlined"
+                      size="small"
                     >
                       Edit
-                    </Link>
-                  </td>
-                </tr>
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
-    </main>
+    </Container>
   );
 }

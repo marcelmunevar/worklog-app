@@ -1,13 +1,16 @@
+import { Container, Paper, Typography } from "@mui/material";
 import CreateClientForm from "./create-client-form";
 import { createClient } from "./actions";
 
 export default function NewClientPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl p-6 md:p-10">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">New Client</h1>
-      <div className="rounded-xl border border-(--border) bg-(--surface) p-6">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        New Client
+      </Typography>
+      <Paper variant="outlined" sx={{ p: 3 }}>
         <CreateClientForm action={createClient} />
-      </div>
-    </main>
+      </Paper>
+    </Container>
   );
 }

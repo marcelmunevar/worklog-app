@@ -1,13 +1,16 @@
+import { Container, Paper, Typography } from "@mui/material";
 import CreateProjectForm from "./create-project-form";
 import { createProject } from "./actions";
 
 export default function NewProjectPage() {
   return (
-    <main className="mx-auto w-full max-w-2xl p-6 md:p-10">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">New Project</h1>
-      <div className="rounded-xl border border-(--border) bg-(--surface) p-6">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        New Project
+      </Typography>
+      <Paper variant="outlined" sx={{ p: 3 }}>
         <CreateProjectForm action={createProject} />
-      </div>
-    </main>
+      </Paper>
+    </Container>
   );
 }

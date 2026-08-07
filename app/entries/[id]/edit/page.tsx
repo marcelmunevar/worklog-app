@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
+import { Container, Paper, Typography } from "@mui/material";
 import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { updateEntry } from "./actions";
@@ -36,15 +37,17 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
   const updateEntryWithId = updateEntry.bind(null, id);
 
   return (
-    <main className="mx-auto w-full max-w-2xl p-6 md:p-10">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Edit Entry</h1>
-      <div className="rounded-xl border border-(--border) bg-(--surface) p-6">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        Edit Entry
+      </Typography>
+      <Paper variant="outlined" sx={{ p: 3 }}>
         <EditEntryForm
           entry={entry}
           projects={allProjects}
           action={updateEntryWithId}
         />
-      </div>
-    </main>
+      </Paper>
+    </Container>
   );
 }

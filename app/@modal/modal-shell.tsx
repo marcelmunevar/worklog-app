@@ -1,5 +1,6 @@
 "use client";
 
+import { Box, Modal, Paper, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -26,24 +27,33 @@ export default function ModalShell({ title, children }: ModalShellProps) {
   }, [router]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          router.back();
-        }
-      }}
+    <Modal
+      open
+      onClose={() => router.back()}
+      aria-labelledby="modal-title"
+      aria-describedby="modal-content"
     >
-      <div
-        className="w-full max-w-2xl rounded-xl border border-(--border) bg-(--surface) p-6 shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
+        }}
       >
-        <h2 className="mb-4 text-2xl font-bold tracking-tight">{title}</h2>
-        {children}
-      </div>
-    </div>
+        <Paper sx={{ width: "100%", maxWidth: 720, p: 3 }}>
+          <Typography
+            id="modal-title"
+            variant="h5"
+            component="h2"
+            sx={{ mb: 2 }}
+          >
+            {title}
+          </Typography>
+          <Box id="modal-content">{children}</Box>
+        </Paper>
+      </Box>
+    </Modal>
   );
 }

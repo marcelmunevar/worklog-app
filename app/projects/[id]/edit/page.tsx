@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { projects } from "@/db/schema";
+import { Container, Paper, Typography } from "@mui/material";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { updateProject } from "./actions";
@@ -32,11 +33,13 @@ export default async function EditProjectPage({
   const updateProjectWithId = updateProject.bind(null, id);
 
   return (
-    <main className="mx-auto w-full max-w-2xl p-6 md:p-10">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Edit Project</h1>
-      <div className="rounded-xl border border-(--border) bg-(--surface) p-6">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
+        Edit Project
+      </Typography>
+      <Paper variant="outlined" sx={{ p: 3 }}>
         <EditProjectForm project={project} action={updateProjectWithId} />
-      </div>
-    </main>
+      </Paper>
+    </Container>
   );
 }
