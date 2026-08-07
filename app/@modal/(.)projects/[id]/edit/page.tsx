@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { projects } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clients, projectClients, projects } from "@/db/schema";
+import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import ModalShell from "@/app/@modal/modal-shell";
 import { updateProject } from "@/app/projects/[id]/edit/actions";
@@ -30,12 +30,26 @@ export default async function EditProjectModalPage({
     notFound();
   }
 
+  const allClients = await db
+    .select({ id: clients.id, name: clients.name })
+    .from(clients)
+    .orderBy(asc(clients.name));
+
+  const assignedClients = await db
+    .select({ clientId: projectClients.clientId })
+    .from(projectClients)
+    .where(eq(projectClients.projectId, id));
+
+  const assignedClientIds = assignedClients.map((row) => row.clientId);
+
   const updateProjectWithId = updateProject.bind(null, id);
 
   return (
     <ModalShell title="Edit Project">
       <EditProjectForm
         project={project}
+        clients={allClients}
+        assignedClientIds={assignedClientIds}
         action={updateProjectWithId}
         cancelLabel="Close"
         cancelMode="back"

@@ -1,7 +1,7 @@
 import { db } from "@/db";
-import { projects } from "@/db/schema";
+import { clients, projectClients, projects } from "@/db/schema";
 import { Container, Paper, Typography } from "@mui/material";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { updateProject } from "./actions";
 import EditProjectForm from "./edit-project-form";
@@ -30,6 +30,18 @@ export default async function EditProjectPage({
     notFound();
   }
 
+  const allClients = await db
+    .select({ id: clients.id, name: clients.name })
+    .from(clients)
+    .orderBy(asc(clients.name));
+
+  const assignedClients = await db
+    .select({ clientId: projectClients.clientId })
+    .from(projectClients)
+    .where(eq(projectClients.projectId, id));
+
+  const assignedClientIds = assignedClients.map((row) => row.clientId);
+
   const updateProjectWithId = updateProject.bind(null, id);
 
   return (
@@ -38,7 +50,12 @@ export default async function EditProjectPage({
         Edit Project
       </Typography>
       <Paper variant="outlined" sx={{ p: 3 }}>
-        <EditProjectForm project={project} action={updateProjectWithId} />
+        <EditProjectForm
+          project={project}
+          clients={allClients}
+          assignedClientIds={assignedClientIds}
+          action={updateProjectWithId}
+        />
       </Paper>
     </Container>
   );

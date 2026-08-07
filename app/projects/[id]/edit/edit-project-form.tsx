@@ -1,7 +1,7 @@
 "use client";
 
-import { Alert, Box, Button, Stack, TextField } from "@mui/material";
-import { useActionState } from "react";
+import { Alert, Box, Button, MenuItem, Stack, TextField } from "@mui/material";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import ModalCloseButton from "./modal-close-button";
 import {
@@ -15,8 +15,15 @@ type ProjectData = {
   description: string | null;
 };
 
+type ClientOption = {
+  id: string;
+  name: string;
+};
+
 type EditProjectFormProps = {
   project: ProjectData;
+  clients: ClientOption[];
+  assignedClientIds: string[];
   action: (
     state: EditProjectFormState,
     formData: FormData,
@@ -38,11 +45,14 @@ function SaveButton() {
 
 export default function EditProjectForm({
   project,
+  clients,
+  assignedClientIds,
   action,
   cancelHref = "/projects",
   cancelLabel = "Cancel",
   cancelMode = "link",
 }: EditProjectFormProps) {
+  const [initialClientIds] = useState<string[]>(() => assignedClientIds);
   const [state, formAction] = useActionState(
     action,
     initialEditProjectFormState,
@@ -77,6 +87,26 @@ export default function EditProjectForm({
           multiline
           rows={5}
         />
+
+        <TextField
+          id="clientIds"
+          name="clientIds"
+          label="Clients"
+          select
+          slotProps={{ select: { multiple: true } }}
+          defaultValue={initialClientIds}
+          helperText={
+            clients.length === 0
+              ? "No clients available yet."
+              : "Optional: assign one or more clients."
+          }
+        >
+          {clients.map((client) => (
+            <MenuItem key={client.id} value={client.id}>
+              {client.name}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <Stack direction="row" spacing={1.5}>
           <SaveButton />
