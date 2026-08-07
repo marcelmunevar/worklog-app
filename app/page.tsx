@@ -19,7 +19,23 @@ export default async function Home() {
 
   return (
     <main className="mx-auto w-full max-w-4xl p-6 md:p-10">
-      <h1 className="mb-6 text-3xl font-bold tracking-tight">Daily Entries</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight">Daily Entries</h1>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
+          >
+            Entries
+          </Link>
+          <Link
+            href="/projects"
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
+          >
+            Projects
+          </Link>
+        </div>
+      </div>
 
       {entries.length === 0 ? (
         <p className="rounded-lg border border-dashed border-(--border) p-6 text-(--muted-foreground)">
