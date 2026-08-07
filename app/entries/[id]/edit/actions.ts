@@ -34,7 +34,8 @@ export async function updateEntry(
       })
       .where(eq(dailyEntries.id, entryId));
 
-    revalidatePath("/");
+    revalidatePath("/entries");
+    revalidatePath("/projects");
 
     return {
       status: "success",

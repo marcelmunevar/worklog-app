@@ -51,7 +51,7 @@ export default function EditEntryForm({
   entry,
   projects,
   action,
-  cancelHref = "/",
+  cancelHref = "/entries",
   cancelLabel = "Cancel",
   cancelMode = "link",
 }: EditEntryFormProps) {
