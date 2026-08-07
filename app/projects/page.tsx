@@ -6,19 +6,8 @@ import {
   toInclusiveTimestampBounds,
 } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
-import {
-  Box,
-  Container,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import ProjectsTable from "./projects-table";
+import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 type ProjectsPageProps = {
@@ -74,6 +63,16 @@ export default async function ProjectsPage({
     )
     .orderBy(desc(projects.createdAt));
 
+  const projectRows = projectList.map((project) => ({
+    id: project.id,
+    name: project.name,
+    status: project.status,
+    description: project.description ?? "",
+    createdAtLabel: formatDate(project.createdAt),
+    createdAtSortValue: project.createdAt?.getTime() ?? 0,
+    entryCount: project.entryCount,
+  }));
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
@@ -118,44 +117,7 @@ export default async function ProjectsPage({
           <Typography color="text.secondary">No projects yet.</Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Entries</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {projectList.map((project) => (
-                <TableRow key={project.id}>
-                  <TableCell sx={{ fontWeight: 500 }}>{project.name}</TableCell>
-                  <TableCell>{project.status}</TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {project.description || "-"}
-                  </TableCell>
-                  <TableCell>{formatDate(project.createdAt)}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    {project.entryCount}
-                  </TableCell>
-                  <TableCell>
-                    <NavButton
-                      href={`/projects/${project.id}/edit`}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Edit
-                    </NavButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ProjectsTable rows={projectRows} />
       )}
     </Container>
   );

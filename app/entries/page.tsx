@@ -1,21 +1,10 @@
 import DateRangeFilter from "@/app/components/date-range-filter";
 import { getDateFilterState } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
+import EntriesTable from "./entries-table";
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
-import {
-  Box,
-  Container,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 
 type EntriesPageProps = {
@@ -45,6 +34,14 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
     .where(whereClause)
     .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
+
+  const entryRows = entries.map((entry) => ({
+    id: entry.id,
+    workDate: entry.workDate,
+    projectName: entry.projectName,
+    title: entry.title,
+    description: entry.description ?? "",
+  }));
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -90,42 +87,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           <Typography color="text.secondary">No entries yet.</Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Project</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {entries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>{entry.workDate}</TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>
-                    {entry.projectName}
-                  </TableCell>
-                  <TableCell>{entry.title}</TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {entry.description || "-"}
-                  </TableCell>
-                  <TableCell>
-                    <NavButton
-                      href={`/entries/${entry.id}/edit`}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Edit
-                    </NavButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <EntriesTable rows={entryRows} />
       )}
     </Container>
   );

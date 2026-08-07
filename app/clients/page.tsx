@@ -1,18 +1,8 @@
 import { db } from "@/db";
 import { clients, projectClients } from "@/db/schema";
 import NavButton from "@/app/components/nav-button";
-import {
-  Box,
-  Container,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import ClientsTable from "./clients-table";
+import { Box, Container, Paper, Typography } from "@mui/material";
 import { desc, eq, sql } from "drizzle-orm";
 
 function formatDate(dateValue: Date | null) {
@@ -43,6 +33,15 @@ export default async function ClientsPage() {
     .groupBy(clients.id, clients.name, clients.acronym, clients.createdAt)
     .orderBy(desc(clients.createdAt));
 
+  const clientRows = clientList.map((client) => ({
+    id: client.id,
+    name: client.name,
+    acronym: client.acronym ?? "",
+    createdAtLabel: formatDate(client.createdAt),
+    createdAtSortValue: client.createdAt?.getTime() ?? 0,
+    projectCount: client.projectCount,
+  }));
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
@@ -62,42 +61,7 @@ export default async function ClientsPage() {
           <Typography color="text.secondary">No clients yet.</Typography>
         </Paper>
       ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Acronym</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Projects</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {clientList.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell sx={{ fontWeight: 500 }}>{client.name}</TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {client.acronym || "-"}
-                  </TableCell>
-                  <TableCell>{formatDate(client.createdAt)}</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    {client.projectCount}
-                  </TableCell>
-                  <TableCell>
-                    <NavButton
-                      href={`/clients/${client.id}/edit`}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Edit
-                    </NavButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ClientsTable rows={clientRows} />
       )}
     </Container>
   );
