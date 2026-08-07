@@ -2,7 +2,10 @@
 
 import NavButton from "@/app/components/nav-button";
 import {
+  Box,
+  Button,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -21,6 +24,7 @@ type ProjectRow = {
   createdAtLabel: string;
   createdAtSortValue: number;
   entryCount: number;
+  deleteAction: () => Promise<void>;
 };
 
 type SortColumn =
@@ -147,13 +151,25 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
                 {project.entryCount}
               </TableCell>
               <TableCell>
-                <NavButton
-                  href={`/projects/${project.id}/edit`}
-                  variant="outlined"
-                  size="small"
-                >
-                  Edit
-                </NavButton>
+                <Stack direction="row" spacing={1}>
+                  <NavButton
+                    href={`/projects/${project.id}/edit`}
+                    variant="outlined"
+                    size="small"
+                  >
+                    Edit
+                  </NavButton>
+                  <Box component="form" action={project.deleteAction}>
+                    <Button
+                      color="error"
+                      size="small"
+                      type="submit"
+                      variant="outlined"
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </Stack>
               </TableCell>
             </TableRow>
           ))}

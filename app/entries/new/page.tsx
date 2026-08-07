@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { Button, Container, Paper, Stack, Typography } from "@mui/material";
-import { asc } from "drizzle-orm";
+import { asc, isNull } from "drizzle-orm";
 import { createEntry } from "./actions";
 import CreateEntryForm from "./create-entry-form";
 
@@ -9,6 +9,7 @@ export default async function NewEntryPage() {
   const allProjects = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
+    .where(isNull(projects.deletedAt))
     .orderBy(asc(projects.name));
 
   return (

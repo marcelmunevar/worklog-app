@@ -20,6 +20,7 @@ type EditClientFormProps = {
     state: EditClientFormState,
     formData: FormData,
   ) => Promise<EditClientFormState>;
+  deleteAction?: () => Promise<void>;
   cancelHref?: string;
   cancelLabel?: string;
   cancelMode?: "link" | "back";
@@ -38,6 +39,7 @@ function SaveButton() {
 export default function EditClientForm({
   client,
   action,
+  deleteAction,
   cancelHref = "/clients",
   cancelLabel = "Cancel",
   cancelMode = "link",
@@ -69,6 +71,16 @@ export default function EditClientForm({
 
         <Stack direction="row" spacing={1.5}>
           <SaveButton />
+          {deleteAction ? (
+            <Button
+              color="error"
+              formAction={deleteAction}
+              type="submit"
+              variant="outlined"
+            >
+              Delete client
+            </Button>
+          ) : null}
           {cancelMode === "back" ? (
             <ModalCloseButton label={cancelLabel} />
           ) : (

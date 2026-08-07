@@ -2,6 +2,10 @@
 
 import NavButton from "@/app/components/nav-button";
 import {
+  Box,
+  Button,
+  Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -9,7 +13,6 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Paper,
 } from "@mui/material";
 import { useMemo, useState } from "react";
 
@@ -20,6 +23,7 @@ type ClientRow = {
   createdAtLabel: string;
   createdAtSortValue: number;
   projectCount: number;
+  deleteAction: () => Promise<void>;
 };
 
 type SortColumn = "name" | "acronym" | "createdAtSortValue" | "projectCount";
@@ -129,13 +133,25 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
                 {client.projectCount}
               </TableCell>
               <TableCell>
-                <NavButton
-                  href={`/clients/${client.id}/edit`}
-                  variant="outlined"
-                  size="small"
-                >
-                  Edit
-                </NavButton>
+                <Stack direction="row" spacing={1}>
+                  <NavButton
+                    href={`/clients/${client.id}/edit`}
+                    variant="outlined"
+                    size="small"
+                  >
+                    Edit
+                  </NavButton>
+                  <Box component="form" action={client.deleteAction}>
+                    <Button
+                      color="error"
+                      size="small"
+                      type="submit"
+                      variant="outlined"
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </Stack>
               </TableCell>
             </TableRow>
           ))}

@@ -8,6 +8,8 @@ export const clients = pgTable("clients", {
   acronym: text("acronym"),
 
   createdAt: timestamp("created_at").defaultNow(),
+
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const projects = pgTable("projects", {
@@ -22,6 +24,8 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at").defaultNow(),
 
   updatedAt: timestamp("updated_at").defaultNow(),
+
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const projectClients = pgTable("project_clients", {
@@ -48,4 +52,6 @@ export const dailyEntries = pgTable("daily_entries", {
   workDate: date("work_date").notNull(),
 
   createdAt: timestamp("created_at").defaultNow(),
+
+  deletedAt: timestamp("deleted_at"),
 });

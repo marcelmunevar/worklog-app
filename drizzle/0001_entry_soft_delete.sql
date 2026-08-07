@@ -1,0 +1,1 @@
+ALTER TABLE "daily_entries" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp;

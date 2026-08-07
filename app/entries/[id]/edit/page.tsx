@@ -1,9 +1,9 @@
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
 import { Container, Paper, Typography } from "@mui/material";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { updateEntry } from "./actions";
+import { deleteEntry, updateEntry } from "./actions";
 import EditEntryForm from "./edit-entry-form";
 
 type EditEntryPageProps = {
@@ -22,7 +22,7 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
       description: dailyEntries.description,
     })
     .from(dailyEntries)
-    .where(eq(dailyEntries.id, id))
+    .where(and(eq(dailyEntries.id, id), isNull(dailyEntries.deletedAt)))
     .limit(1);
 
   if (!entry) {
@@ -32,9 +32,15 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
   const allProjects = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
+    .where(isNull(projects.deletedAt))
     .orderBy(asc(projects.name));
 
+  if (!allProjects.some((project) => project.id === entry.projectId)) {
+    notFound();
+  }
+
   const updateEntryWithId = updateEntry.bind(null, id);
+  const deleteEntryWithId = deleteEntry.bind(null, id);
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
@@ -46,6 +52,7 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
           entry={entry}
           projects={allProjects}
           action={updateEntryWithId}
+          deleteAction={deleteEntryWithId}
         />
       </Paper>
     </Container>

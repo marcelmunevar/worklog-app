@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
-import { inArray } from "drizzle-orm";
+import { and, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type CreateProjectFormState } from "./form-state";
 
@@ -36,7 +36,7 @@ export async function createProject(
     const validClients = await db
       .select({ id: clients.id })
       .from(clients)
-      .where(inArray(clients.id, clientIds));
+      .where(and(inArray(clients.id, clientIds), isNull(clients.deletedAt)));
 
     if (validClients.length !== clientIds.length) {
       return {

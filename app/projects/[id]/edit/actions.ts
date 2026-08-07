@@ -2,8 +2,9 @@
 
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { type EditProjectFormState } from "./form-state";
 
 function parseClientIds(formData: FormData): string[] {
@@ -37,7 +38,7 @@ export async function updateProject(
     const validClients = await db
       .select({ id: clients.id })
       .from(clients)
-      .where(inArray(clients.id, clientIds));
+      .where(and(inArray(clients.id, clientIds), isNull(clients.deletedAt)));
 
     if (validClients.length !== clientIds.length) {
       return {
@@ -83,4 +84,17 @@ export async function updateProject(
       message: "Could not save the project. Please try again.",
     };
   }
+}
+
+export async function deleteProject(projectId: string) {
+  await db
+    .update(projects)
+    .set({ deletedAt: new Date() })
+    .where(eq(projects.id, projectId));
+
+  revalidatePath("/projects");
+  revalidatePath("/entries");
+  revalidatePath("/clients");
+
+  redirect("/projects");
 }

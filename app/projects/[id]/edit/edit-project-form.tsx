@@ -28,6 +28,7 @@ type EditProjectFormProps = {
     state: EditProjectFormState,
     formData: FormData,
   ) => Promise<EditProjectFormState>;
+  deleteAction?: () => Promise<void>;
   cancelHref?: string;
   cancelLabel?: string;
   cancelMode?: "link" | "back";
@@ -48,6 +49,7 @@ export default function EditProjectForm({
   clients,
   assignedClientIds,
   action,
+  deleteAction,
   cancelHref = "/projects",
   cancelLabel = "Cancel",
   cancelMode = "link",
@@ -110,6 +112,16 @@ export default function EditProjectForm({
 
         <Stack direction="row" spacing={1.5}>
           <SaveButton />
+          {deleteAction ? (
+            <Button
+              color="error"
+              formAction={deleteAction}
+              type="submit"
+              variant="outlined"
+            >
+              Delete project
+            </Button>
+          ) : null}
           {cancelMode === "back" ? (
             <ModalCloseButton label={cancelLabel} />
           ) : (

@@ -1,8 +1,8 @@
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { updateEntry } from "@/app/entries/[id]/edit/actions";
+import { deleteEntry, updateEntry } from "@/app/entries/[id]/edit/actions";
 import EditEntryForm from "@/app/entries/[id]/edit/edit-entry-form";
 import ModalShell from "@/app/@modal/modal-shell";
 
@@ -24,7 +24,7 @@ export default async function EditEntryModalPage({
       description: dailyEntries.description,
     })
     .from(dailyEntries)
-    .where(eq(dailyEntries.id, id))
+    .where(and(eq(dailyEntries.id, id), isNull(dailyEntries.deletedAt)))
     .limit(1);
 
   if (!entry) {
@@ -34,9 +34,15 @@ export default async function EditEntryModalPage({
   const allProjects = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
+    .where(isNull(projects.deletedAt))
     .orderBy(asc(projects.name));
 
+  if (!allProjects.some((project) => project.id === entry.projectId)) {
+    notFound();
+  }
+
   const updateEntryWithId = updateEntry.bind(null, id);
+  const deleteEntryWithId = deleteEntry.bind(null, id);
 
   return (
     <ModalShell title="Edit Entry">
@@ -44,6 +50,7 @@ export default async function EditEntryModalPage({
         entry={entry}
         projects={allProjects}
         action={updateEntryWithId}
+        deleteAction={deleteEntryWithId}
         cancelLabel="Close"
         cancelMode="back"
       />

@@ -1,11 +1,12 @@
 import DateRangeFilter from "@/app/components/date-range-filter";
 import { getDateFilterState } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
+import { deleteEntry } from "./[id]/edit/actions";
 import EntriesTable from "./entries-table";
 import { db } from "@/db";
 import { dailyEntries, projects } from "@/db/schema";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
 
 type EntriesPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -16,10 +17,11 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
   const dateFilter = getDateFilterState(resolvedSearchParams);
   const whereClause = dateFilter.isActive
     ? and(
+        isNull(dailyEntries.deletedAt),
         gte(dailyEntries.workDate, dateFilter.dateFrom),
         lte(dailyEntries.workDate, dateFilter.dateTo),
       )
-    : undefined;
+    : isNull(dailyEntries.deletedAt);
 
   const entries = await db
     .select({
@@ -31,7 +33,10 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       createdAt: dailyEntries.createdAt,
     })
     .from(dailyEntries)
-    .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
+    .innerJoin(
+      projects,
+      and(eq(dailyEntries.projectId, projects.id), isNull(projects.deletedAt)),
+    )
     .where(whereClause)
     .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
 
@@ -41,6 +46,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     projectName: entry.projectName,
     title: entry.title,
     description: entry.description ?? "",
+    deleteAction: deleteEntry.bind(null, entry.id),
   }));
 
   return (

@@ -6,9 +6,10 @@ import {
   toInclusiveTimestampBounds,
 } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
+import { deleteProject } from "./[id]/edit/actions";
 import ProjectsTable from "./projects-table";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 type ProjectsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -38,9 +39,13 @@ export default async function ProjectsPage({
           dateFilter.dateTo,
         );
 
-        return and(gte(projects.createdAt, from), lte(projects.createdAt, to));
+        return and(
+          isNull(projects.deletedAt),
+          gte(projects.createdAt, from),
+          lte(projects.createdAt, to),
+        );
       })()
-    : undefined;
+    : isNull(projects.deletedAt);
 
   const projectList = await db
     .select({
@@ -52,7 +57,13 @@ export default async function ProjectsPage({
       entryCount: sql<number>`count(${dailyEntries.id})`.mapWith(Number),
     })
     .from(projects)
-    .leftJoin(dailyEntries, eq(dailyEntries.projectId, projects.id))
+    .leftJoin(
+      dailyEntries,
+      and(
+        eq(dailyEntries.projectId, projects.id),
+        isNull(dailyEntries.deletedAt),
+      ),
+    )
     .where(whereClause)
     .groupBy(
       projects.id,
@@ -71,6 +82,7 @@ export default async function ProjectsPage({
     createdAtLabel: formatDate(project.createdAt),
     createdAtSortValue: project.createdAt?.getTime() ?? 0,
     entryCount: project.entryCount,
+    deleteAction: deleteProject.bind(null, project.id),
   }));
 
   return (

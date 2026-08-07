@@ -1,9 +1,10 @@
 import { db } from "@/db";
-import { clients, projectClients } from "@/db/schema";
+import { clients, projectClients, projects } from "@/db/schema";
 import NavButton from "@/app/components/nav-button";
+import { deleteClient } from "./[id]/edit/actions";
 import ClientsTable from "./clients-table";
 import { Box, Container, Paper, Typography } from "@mui/material";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 
 function formatDate(dateValue: Date | null) {
   if (!dateValue) {
@@ -24,12 +25,18 @@ export default async function ClientsPage() {
       name: clients.name,
       acronym: clients.acronym,
       createdAt: clients.createdAt,
-      projectCount: sql<number>`count(${projectClients.projectId})`.mapWith(
-        Number,
-      ),
+      projectCount: sql<number>`count(${projects.id})`.mapWith(Number),
     })
     .from(clients)
     .leftJoin(projectClients, eq(projectClients.clientId, clients.id))
+    .leftJoin(
+      projects,
+      and(
+        eq(projectClients.projectId, projects.id),
+        isNull(projects.deletedAt),
+      ),
+    )
+    .where(isNull(clients.deletedAt))
     .groupBy(clients.id, clients.name, clients.acronym, clients.createdAt)
     .orderBy(desc(clients.createdAt));
 
@@ -40,6 +47,7 @@ export default async function ClientsPage() {
     createdAtLabel: formatDate(client.createdAt),
     createdAtSortValue: client.createdAt?.getTime() ?? 0,
     projectCount: client.projectCount,
+    deleteAction: deleteClient.bind(null, client.id),
   }));
 
   return (

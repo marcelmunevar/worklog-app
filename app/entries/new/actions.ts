@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { dailyEntries } from "@/db/schema";
+import { dailyEntries, projects } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type CreateEntryFormState } from "./form-state";
 
@@ -18,6 +19,19 @@ export async function createEntry(
     return {
       status: "error",
       message: "Project, title, and date are required.",
+    };
+  }
+
+  const [project] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .limit(1);
+
+  if (!project) {
+    return {
+      status: "error",
+      message: "Selected project is no longer available.",
     };
   }
 

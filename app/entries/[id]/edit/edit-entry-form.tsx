@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Box, Button, MenuItem, Stack, TextField } from "@mui/material";
+import { Box, Alert, Button, MenuItem, Stack, TextField } from "@mui/material";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import ModalCloseButton from "./modal-close-button";
@@ -28,6 +28,7 @@ type EditEntryFormProps = {
     state: EditEntryFormState,
     formData: FormData,
   ) => Promise<EditEntryFormState>;
+  deleteAction?: () => Promise<void>;
   cancelHref?: string;
   cancelLabel?: string;
   cancelMode?: "link" | "back";
@@ -47,6 +48,7 @@ export default function EditEntryForm({
   entry,
   projects,
   action,
+  deleteAction,
   cancelHref = "/entries",
   cancelLabel = "Cancel",
   cancelMode = "link",
@@ -101,6 +103,16 @@ export default function EditEntryForm({
 
         <Stack direction="row" spacing={1.5}>
           <SaveButton />
+          {deleteAction ? (
+            <Button
+              color="error"
+              formAction={deleteAction}
+              type="submit"
+              variant="outlined"
+            >
+              Delete entry
+            </Button>
+          ) : null}
           {cancelMode === "back" ? (
             <ModalCloseButton label={cancelLabel} />
           ) : (

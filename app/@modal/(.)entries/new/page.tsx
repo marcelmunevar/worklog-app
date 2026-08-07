@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { Paper, Stack, Typography } from "@mui/material";
-import { asc } from "drizzle-orm";
+import { asc, isNull } from "drizzle-orm";
 import ModalShell from "@/app/@modal/modal-shell";
 import ModalCloseButton from "@/app/components/modal-close-button";
 import NavButton from "@/app/components/nav-button";
@@ -12,6 +12,7 @@ export default async function NewEntryModalPage() {
   const allProjects = await db
     .select({ id: projects.id, name: projects.name })
     .from(projects)
+    .where(isNull(projects.deletedAt))
     .orderBy(asc(projects.name));
 
   return (

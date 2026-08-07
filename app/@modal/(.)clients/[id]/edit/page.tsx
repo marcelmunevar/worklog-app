@@ -1,9 +1,9 @@
 import { db } from "@/db";
 import { clients } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import ModalShell from "@/app/@modal/modal-shell";
-import { updateClient } from "@/app/clients/[id]/edit/actions";
+import { deleteClient, updateClient } from "@/app/clients/[id]/edit/actions";
 import EditClientForm from "@/app/clients/[id]/edit/edit-client-form";
 
 type EditClientModalPageProps = {
@@ -22,7 +22,7 @@ export default async function EditClientModalPage({
       acronym: clients.acronym,
     })
     .from(clients)
-    .where(eq(clients.id, id))
+    .where(and(eq(clients.id, id), isNull(clients.deletedAt)))
     .limit(1);
 
   if (!client) {
@@ -30,12 +30,14 @@ export default async function EditClientModalPage({
   }
 
   const updateClientWithId = updateClient.bind(null, id);
+  const deleteClientWithId = deleteClient.bind(null, id);
 
   return (
     <ModalShell title="Edit Client">
       <EditClientForm
         client={client}
         action={updateClientWithId}
+        deleteAction={deleteClientWithId}
         cancelLabel="Close"
         cancelMode="back"
       />

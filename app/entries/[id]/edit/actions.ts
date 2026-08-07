@@ -1,9 +1,10 @@
 "use server";
 
 import { db } from "@/db";
-import { dailyEntries } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { dailyEntries, projects } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { type EditEntryFormState } from "./form-state";
 
 export async function updateEntry(
@@ -20,6 +21,19 @@ export async function updateEntry(
     return {
       status: "error",
       message: "Project, title, and date are required.",
+    };
+  }
+
+  const [project] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .limit(1);
+
+  if (!project) {
+    return {
+      status: "error",
+      message: "Selected project is no longer available.",
     };
   }
 
@@ -47,4 +61,16 @@ export async function updateEntry(
       message: "Could not save the entry. Please try again.",
     };
   }
+}
+
+export async function deleteEntry(entryId: string) {
+  await db
+    .update(dailyEntries)
+    .set({ deletedAt: new Date() })
+    .where(eq(dailyEntries.id, entryId));
+
+  revalidatePath("/entries");
+  revalidatePath("/projects");
+
+  redirect("/entries");
 }
