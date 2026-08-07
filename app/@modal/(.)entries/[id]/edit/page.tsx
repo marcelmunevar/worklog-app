@@ -45,6 +45,7 @@ export default async function EditEntryModalPage({
         projects={allProjects}
         action={updateEntryWithId}
         cancelLabel="Close"
+        cancelMode="back"
       />
     </ModalShell>
   );

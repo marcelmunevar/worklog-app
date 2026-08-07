@@ -41,16 +41,7 @@ export default function ModalShell({ title, children }: ModalShellProps) {
         aria-modal="true"
         aria-label={title}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-md border border-(--border) px-2 py-1 text-sm font-medium hover:bg-(--surface-muted)"
-          >
-            Close
-          </button>
-        </div>
+        <h2 className="mb-4 text-2xl font-bold tracking-tight">{title}</h2>
         {children}
       </div>
     </div>

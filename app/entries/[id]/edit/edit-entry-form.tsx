@@ -1,4 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import ModalCloseButton from "./modal-close-button";
+import {
+  initialEditEntryFormState,
+  type EditEntryFormState,
+} from "./form-state";
 
 type ProjectOption = {
   id: string;
@@ -15,10 +24,28 @@ type EntryData = {
 type EditEntryFormProps = {
   entry: EntryData;
   projects: ProjectOption[];
-  action: (formData: FormData) => void | Promise<void>;
+  action: (
+    state: EditEntryFormState,
+    formData: FormData,
+  ) => Promise<EditEntryFormState>;
   cancelHref?: string;
   cancelLabel?: string;
+  cancelMode?: "link" | "back";
 };
+
+function SaveButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {pending ? "Saving..." : "Save changes"}
+    </button>
+  );
+}
 
 export default function EditEntryForm({
   entry,
@@ -26,9 +53,12 @@ export default function EditEntryForm({
   action,
   cancelHref = "/",
   cancelLabel = "Cancel",
+  cancelMode = "link",
 }: EditEntryFormProps) {
+  const [state, formAction] = useActionState(action, initialEditEntryFormState);
+
   return (
-    <form action={action} className="space-y-5">
+    <form action={formAction} className="space-y-5">
       <div className="space-y-2">
         <label htmlFor="projectId" className="block text-sm font-medium">
           Project
@@ -90,19 +120,31 @@ export default function EditEntryForm({
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <button
-          type="submit"
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background"
-        >
-          Save changes
-        </button>
-        <Link
-          href={cancelHref}
-          className="rounded-md border border-(--border) px-4 py-2 text-sm font-medium hover:bg-(--surface-muted)"
-        >
-          {cancelLabel}
-        </Link>
+        <SaveButton />
+        {cancelMode === "back" ? (
+          <ModalCloseButton label={cancelLabel} />
+        ) : (
+          <Link
+            href={cancelHref}
+            className="rounded-md border border-(--border) px-4 py-2 text-sm font-medium hover:bg-(--surface-muted)"
+          >
+            {cancelLabel}
+          </Link>
+        )}
       </div>
+
+      {state.status !== "idle" ? (
+        <p
+          aria-live="polite"
+          className={
+            state.status === "success"
+              ? "rounded-md border border-emerald-600/50 bg-emerald-600/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+              : "rounded-md border border-red-600/50 bg-red-600/10 px-3 py-2 text-sm text-red-700 dark:text-red-300"
+          }
+        >
+          {state.message}
+        </p>
+      ) : null}
     </form>
   );
 }
