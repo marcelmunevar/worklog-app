@@ -37,6 +37,12 @@ export default async function ClientsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Clients</h1>
         <div className="flex items-center gap-2">
           <Link
+            href="/clients/new"
+            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
+          >
+            Add client
+          </Link>
+          <Link
             href="/entries"
             className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
           >
@@ -50,7 +56,7 @@ export default async function ClientsPage() {
           </Link>
           <Link
             href="/clients"
-            className="rounded-md bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
           >
             Clients
           </Link>

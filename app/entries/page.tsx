@@ -23,8 +23,14 @@ export default async function EntriesPage() {
         <h1 className="text-3xl font-bold tracking-tight">Daily Entries</h1>
         <div className="flex items-center gap-2">
           <Link
-            href="/entries"
+            href="/entries/new"
             className="rounded-md bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
+          >
+            Add entry
+          </Link>
+          <Link
+            href="/entries"
+            className="rounded-md border border-(--border) px-3 py-1.5 text-sm font-semibold hover:bg-(--surface-muted)"
           >
             Entries
           </Link>
