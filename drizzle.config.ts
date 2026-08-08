@@ -2,27 +2,31 @@ import { existsSync, readFileSync } from "node:fs";
 import { defineConfig } from "drizzle-kit";
 
 function readDatabaseUrlFromDotEnv() {
-  if (!existsSync(".env")) {
-    return undefined;
-  }
+  const envFiles = [".env.local", ".env"];
 
-  const envContents = readFileSync(".env", "utf8");
-
-  for (const rawLine of envContents.split(/\r?\n/)) {
-    const line = rawLine.trim();
-
-    if (!line || line.startsWith("#")) {
+  for (const fileName of envFiles) {
+    if (!existsSync(fileName)) {
       continue;
     }
 
-    const [key, ...valueParts] = line.split("=");
+    const envContents = readFileSync(fileName, "utf8");
 
-    if (key !== "DATABASE_URL") {
-      continue;
+    for (const rawLine of envContents.split(/\r?\n/)) {
+      const line = rawLine.trim();
+
+      if (!line || line.startsWith("#")) {
+        continue;
+      }
+
+      const [key, ...valueParts] = line.split("=");
+
+      if (key !== "DATABASE_URL") {
+        continue;
+      }
+
+      const value = valueParts.join("=").trim();
+      return value.replace(/^['\"]|['\"]$/g, "");
     }
-
-    const value = valueParts.join("=").trim();
-    return value.replace(/^['\"]|['\"]$/g, "");
   }
 
   return undefined;

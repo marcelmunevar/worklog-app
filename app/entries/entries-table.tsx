@@ -23,12 +23,18 @@ type EntryRow = {
   projectName: string;
   title: string;
   description: string;
+  clientsLabel: string;
   isDeleted: boolean;
   isProjectDeleted: boolean;
   deleteAction?: () => Promise<void>;
 };
 
-type SortColumn = "workDate" | "projectName" | "title" | "description";
+type SortColumn =
+  | "workDate"
+  | "projectName"
+  | "title"
+  | "description"
+  | "clientsLabel";
 type SortOrder = "asc" | "desc";
 
 type EntriesTableProps = {
@@ -111,6 +117,17 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                 Description
               </TableSortLabel>
             </TableCell>
+            <TableCell
+              sortDirection={sortColumn === "clientsLabel" ? sortOrder : false}
+            >
+              <TableSortLabel
+                active={sortColumn === "clientsLabel"}
+                direction={sortColumn === "clientsLabel" ? sortOrder : "asc"}
+                onClick={() => handleSort("clientsLabel")}
+              >
+                Clients
+              </TableSortLabel>
+            </TableCell>
             <TableCell>Flags</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -126,10 +143,15 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
               }
             >
               <TableCell>{entry.workDate}</TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>{entry.projectName}</TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>
+                {entry.projectName}
+              </TableCell>
               <TableCell>{entry.title}</TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {entry.description || "-"}
+              </TableCell>
+              <TableCell sx={{ color: "text.secondary" }}>
+                {entry.clientsLabel || "-"}
               </TableCell>
               <TableCell>
                 {entry.isDeleted || entry.isProjectDeleted ? (

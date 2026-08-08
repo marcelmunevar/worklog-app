@@ -1,19 +1,13 @@
-import { db } from "@/db";
-import { projects } from "@/db/schema";
 import { Paper, Stack, Typography } from "@mui/material";
-import { asc, isNull } from "drizzle-orm";
 import ModalShell from "@/app/@modal/modal-shell";
 import ModalCloseButton from "@/app/components/modal-close-button";
 import NavButton from "@/app/components/nav-button";
+import { getEntryProjectOptions } from "@/app/entries/entry-form-data";
 import { createEntry } from "@/app/entries/new/actions";
 import CreateEntryForm from "@/app/entries/new/create-entry-form";
 
 export default async function NewEntryModalPage() {
-  const allProjects = await db
-    .select({ id: projects.id, name: projects.name })
-    .from(projects)
-    .where(isNull(projects.deletedAt))
-    .orderBy(asc(projects.name));
+  const allProjects = await getEntryProjectOptions();
 
   return (
     <ModalShell title="New Entry">

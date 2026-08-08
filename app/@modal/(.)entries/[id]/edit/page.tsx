@@ -1,7 +1,11 @@
 import { db } from "@/db";
-import { dailyEntries, projects } from "@/db/schema";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { dailyEntries } from "@/db/schema";
+import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import {
+  getEntryAssignedClientIds,
+  getEntryProjectOptions,
+} from "@/app/entries/entry-form-data";
 import { deleteEntry, updateEntry } from "@/app/entries/[id]/edit/actions";
 import EditEntryForm from "@/app/entries/[id]/edit/edit-entry-form";
 import ModalShell from "@/app/@modal/modal-shell";
@@ -31,11 +35,10 @@ export default async function EditEntryModalPage({
     notFound();
   }
 
-  const allProjects = await db
-    .select({ id: projects.id, name: projects.name })
-    .from(projects)
-    .where(isNull(projects.deletedAt))
-    .orderBy(asc(projects.name));
+  const [allProjects, assignedClientIds] = await Promise.all([
+    getEntryProjectOptions(),
+    getEntryAssignedClientIds(id),
+  ]);
 
   if (!allProjects.some((project) => project.id === entry.projectId)) {
     notFound();
@@ -47,7 +50,7 @@ export default async function EditEntryModalPage({
   return (
     <ModalShell title="Edit Entry">
       <EditEntryForm
-        entry={entry}
+        entry={{ ...entry, clientIds: assignedClientIds }}
         projects={allProjects}
         action={updateEntryWithId}
         deleteAction={deleteEntryWithId}

@@ -1,4 +1,11 @@
-import { pgTable, uuid, text, timestamp, date } from "drizzle-orm/pg-core";
+import {
+  date,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const clients = pgTable("clients", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -37,6 +44,20 @@ export const projectClients = pgTable("project_clients", {
     .notNull()
     .references(() => clients.id),
 });
+
+export const entryClients = pgTable(
+  "entry_clients",
+  {
+    dailyEntryId: uuid("daily_entry_id")
+      .notNull()
+      .references(() => dailyEntries.id),
+
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id),
+  },
+  (table) => [primaryKey({ columns: [table.dailyEntryId, table.clientId] })],
+);
 
 export const dailyEntries = pgTable("daily_entries", {
   id: uuid("id").defaultRandom().primaryKey(),

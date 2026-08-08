@@ -1,8 +1,12 @@
 import { db } from "@/db";
-import { dailyEntries, projects } from "@/db/schema";
+import { dailyEntries } from "@/db/schema";
 import { Container, Paper, Typography } from "@mui/material";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import {
+  getEntryAssignedClientIds,
+  getEntryProjectOptions,
+} from "@/app/entries/entry-form-data";
 import { deleteEntry, updateEntry } from "./actions";
 import EditEntryForm from "./edit-entry-form";
 
@@ -29,11 +33,10 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
     notFound();
   }
 
-  const allProjects = await db
-    .select({ id: projects.id, name: projects.name })
-    .from(projects)
-    .where(isNull(projects.deletedAt))
-    .orderBy(asc(projects.name));
+  const [allProjects, assignedClientIds] = await Promise.all([
+    getEntryProjectOptions(),
+    getEntryAssignedClientIds(id),
+  ]);
 
   if (!allProjects.some((project) => project.id === entry.projectId)) {
     notFound();
@@ -49,7 +52,7 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
       </Typography>
       <Paper variant="outlined" sx={{ p: 3 }}>
         <EditEntryForm
-          entry={entry}
+          entry={{ ...entry, clientIds: assignedClientIds }}
           projects={allProjects}
           action={updateEntryWithId}
           deleteAction={deleteEntryWithId}
