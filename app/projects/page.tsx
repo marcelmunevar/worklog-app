@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { dailyEntries, projects } from "@/db/schema";
+import { clients, dailyEntries, projectClients, projects } from "@/db/schema";
 import DateRangeFilter from "@/app/components/date-range-filter";
 import {
   getDateFilterState,
@@ -79,11 +79,38 @@ export default async function ProjectsPage({
     )
     .orderBy(desc(projects.createdAt));
 
+  const clientAssignments = await db
+    .select({
+      projectId: projectClients.projectId,
+      clientName: clients.name,
+    })
+    .from(projectClients)
+    .innerJoin(clients, eq(projectClients.clientId, clients.id))
+    .where(isNull(clients.deletedAt));
+
+  const clientsByProjectId = clientAssignments.reduce<Record<string, string[]>>(
+    (accumulator, assignment) => {
+      if (!assignment.projectId) {
+        return accumulator;
+      }
+
+      const currentNames = accumulator[assignment.projectId] ?? [];
+      accumulator[assignment.projectId] = [
+        ...currentNames,
+        assignment.clientName,
+      ];
+
+      return accumulator;
+    },
+    {},
+  );
+
   const projectRows = projectList.map((project) => ({
     id: project.id,
     name: project.name,
-    status: project.status,
     description: project.description ?? "",
+    clientsLabel: (clientsByProjectId[project.id] ?? []).join(", "),
+    status: project.status,
     createdAtLabel: formatDate(project.createdAt),
     createdAtSortValue: project.createdAt?.getTime() ?? 0,
     entryCount: project.entryCount,

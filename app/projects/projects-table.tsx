@@ -21,6 +21,7 @@ type ProjectRow = {
   id: string;
   name: string;
   description: string;
+  clientsLabel: string;
   status: string;
   createdAtLabel: string;
   createdAtSortValue: number;
@@ -111,6 +112,7 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
                 Description
               </TableSortLabel>
             </TableCell>
+            <TableCell>Clients</TableCell>
             <TableCell
               sortDirection={
                 sortColumn === "createdAtSortValue" ? sortOrder : false
@@ -152,6 +154,7 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
               <TableCell sx={{ color: "text.secondary" }}>
                 {project.description || "-"}
               </TableCell>
+              <TableCell>{project.clientsLabel || "-"}</TableCell>
               <TableCell>{project.createdAtLabel}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>
                 {project.entryCount}
