@@ -137,6 +137,7 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
                 Entries
               </TableSortLabel>
             </TableCell>
+            <TableCell>Flags</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -146,18 +147,7 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
               key={project.id}
               sx={project.isDeleted ? { opacity: 0.7 } : undefined}
             >
-              <TableCell sx={{ fontWeight: 500 }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center" }}
-                >
-                  <Box component="span">{project.name}</Box>
-                  {project.isDeleted ? (
-                    <Chip color="default" label="Deleted" size="small" />
-                  ) : null}
-                </Stack>
-              </TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>{project.name}</TableCell>
               <TableCell>{project.status}</TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {project.description || "-"}
@@ -168,12 +158,14 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
               </TableCell>
               <TableCell>
                 {project.isDeleted ? (
-                  <Chip
-                    color="default"
-                    label="Soft deleted"
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip color="default" label="Deleted" size="small" />
+                ) : (
+                  "-"
+                )}
+              </TableCell>
+              <TableCell>
+                {project.isDeleted ? (
+                  "-"
                 ) : (
                   <Stack direction="row" spacing={1}>
                     <NavButton

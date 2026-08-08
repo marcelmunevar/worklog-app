@@ -120,6 +120,7 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
                 Projects
               </TableSortLabel>
             </TableCell>
+            <TableCell>Flags</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -129,18 +130,7 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
               key={client.id}
               sx={client.isDeleted ? { opacity: 0.7 } : undefined}
             >
-              <TableCell sx={{ fontWeight: 500 }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center" }}
-                >
-                  <Box component="span">{client.name}</Box>
-                  {client.isDeleted ? (
-                    <Chip color="default" label="Deleted" size="small" />
-                  ) : null}
-                </Stack>
-              </TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>{client.name}</TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {client.acronym || "-"}
               </TableCell>
@@ -150,12 +140,14 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
               </TableCell>
               <TableCell>
                 {client.isDeleted ? (
-                  <Chip
-                    color="default"
-                    label="Soft deleted"
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip color="default" label="Deleted" size="small" />
+                ) : (
+                  "-"
+                )}
+              </TableCell>
+              <TableCell>
+                {client.isDeleted ? (
+                  "-"
                 ) : (
                   <Stack direction="row" spacing={1}>
                     <NavButton

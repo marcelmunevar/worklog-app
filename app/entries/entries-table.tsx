@@ -111,6 +111,7 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                 Description
               </TableSortLabel>
             </TableCell>
+            <TableCell>Flags</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -125,53 +126,35 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
               }
             >
               <TableCell>{entry.workDate}</TableCell>
-              <TableCell sx={{ fontWeight: 500 }}>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center" }}
-                >
-                  <Box component="span">{entry.projectName}</Box>
-                  {entry.isProjectDeleted ? (
-                    <Chip
-                      color="default"
-                      label="Project deleted"
-                      size="small"
-                    />
-                  ) : null}
-                </Stack>
-              </TableCell>
-              <TableCell>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  sx={{ alignItems: "center" }}
-                >
-                  <Box component="span">{entry.title}</Box>
-                  {entry.isDeleted ? (
-                    <Chip color="default" label="Deleted" size="small" />
-                  ) : null}
-                </Stack>
-              </TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>{entry.projectName}</TableCell>
+              <TableCell>{entry.title}</TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
                 {entry.description || "-"}
               </TableCell>
               <TableCell>
+                {entry.isDeleted || entry.isProjectDeleted ? (
+                  <Stack direction="row" spacing={1}>
+                    {entry.isDeleted ? (
+                      <Chip color="default" label="Deleted" size="small" />
+                    ) : null}
+                    {entry.isProjectDeleted ? (
+                      <Chip
+                        color="default"
+                        label="Project deleted"
+                        size="small"
+                        variant="outlined"
+                      />
+                    ) : null}
+                  </Stack>
+                ) : (
+                  "-"
+                )}
+              </TableCell>
+              <TableCell>
                 {entry.isDeleted ? (
-                  <Chip
-                    color="default"
-                    label="Soft deleted"
-                    size="small"
-                    variant="outlined"
-                  />
+                  "-"
                 ) : entry.isProjectDeleted ? (
                   <Stack direction="row" spacing={1}>
-                    <Chip
-                      color="default"
-                      label="Project deleted"
-                      size="small"
-                      variant="outlined"
-                    />
                     {entry.deleteAction ? (
                       <Box component="form" action={entry.deleteAction}>
                         <Button
