@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, Box, Button, MenuItem, Stack, TextField } from "@mui/material";
+import { Alert, Button, MenuItem, Stack, TextField } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { DatePreset } from "./date-filter-utils";
@@ -12,11 +12,13 @@ type DateRangeFilterProps = {
 };
 
 const PRESET_OPTIONS: Array<{ value: DatePreset; label: string }> = [
-  { value: "last_7_days", label: "Last 7 days" },
-  { value: "last_30_days", label: "Last 30 days" },
+  { value: "this_week", label: "This week" },
+  { value: "last_week", label: "Last week" },
+  { value: "next_week", label: "Next week" },
   { value: "this_month", label: "This month" },
   { value: "last_month", label: "Last month" },
-  { value: "custom", label: "Custom" },
+  { value: "all_time", label: "All time" },
+  { value: "custom", label: "Custom date range" },
 ];
 
 export default function DateRangeFilter({
@@ -28,7 +30,7 @@ export default function DateRangeFilter({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [selectedPreset, setSelectedPreset] = useState<DatePreset>(preset);
+  const [selectedPreset, setSelectedPreset] = useState(preset);
   const [fromDate, setFromDate] = useState(dateFrom);
   const [toDate, setToDate] = useState(dateTo);
 
@@ -38,7 +40,7 @@ export default function DateRangeFilter({
     }
 
     if (!fromDate || !toDate) {
-      return "Both start and end dates are required.";
+      return "";
     }
 
     if (fromDate > toDate) {
@@ -56,35 +58,72 @@ export default function DateRangeFilter({
     );
   }, [searchParams]);
 
-  const applyFilter = () => {
-    if (selectedPreset === "custom" && customError) {
-      return;
-    }
-
+  const updateParams = (nextPreset: DatePreset, nextFrom = "", nextTo = "") => {
     const nextParams = new URLSearchParams(searchParams.toString());
+
     nextParams.delete("datePreset");
     nextParams.delete("dateFrom");
     nextParams.delete("dateTo");
 
-    if (selectedPreset === "custom") {
-      nextParams.set("datePreset", "custom");
-      nextParams.set("dateFrom", fromDate);
-      nextParams.set("dateTo", toDate);
-    } else {
-      nextParams.set("datePreset", selectedPreset);
+    nextParams.set("datePreset", nextPreset);
+
+    if (nextPreset === "custom") {
+      if (nextFrom) {
+        nextParams.set("dateFrom", nextFrom);
+      }
+
+      if (nextTo) {
+        nextParams.set("dateTo", nextTo);
+      }
     }
 
     const nextQuery = nextParams.toString();
+
     router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname);
+  };
+
+  const handlePresetChange = (nextPreset: DatePreset) => {
+    setSelectedPreset(nextPreset);
+
+    if (nextPreset === "custom") {
+      return;
+    }
+
+    setFromDate("");
+    setToDate("");
+
+    updateParams(nextPreset);
+  };
+
+  const handleFromDateChange = (value: string) => {
+    setFromDate(value);
+
+    if (!value || !toDate || value > toDate) {
+      return;
+    }
+
+    updateParams("custom", value, toDate);
+  };
+
+  const handleToDateChange = (value: string) => {
+    setToDate(value);
+
+    if (!fromDate || !value || fromDate > value) {
+      return;
+    }
+
+    updateParams("custom", fromDate, value);
   };
 
   const clearFilter = () => {
     const nextParams = new URLSearchParams(searchParams.toString());
+
     nextParams.delete("datePreset");
     nextParams.delete("dateFrom");
     nextParams.delete("dateTo");
 
     const nextQuery = nextParams.toString();
+
     router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   };
 
@@ -105,7 +144,7 @@ export default function DateRangeFilter({
           label="Date range"
           value={selectedPreset}
           onChange={(event) =>
-            setSelectedPreset(event.target.value as DatePreset)
+            handlePresetChange(event.target.value as DatePreset)
           }
           sx={{ minWidth: { sm: 180 } }}
         >
@@ -123,38 +162,28 @@ export default function DateRangeFilter({
               label="From"
               type="date"
               value={fromDate}
-              onChange={(event) => setFromDate(event.target.value)}
+              onChange={(event) => handleFromDateChange(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
               sx={{ minWidth: { sm: 160 } }}
             />
+
             <TextField
               size="small"
               label="To"
               type="date"
               value={toDate}
-              onChange={(event) => setToDate(event.target.value)}
+              onChange={(event) => handleToDateChange(event.target.value)}
               slotProps={{ inputLabel: { shrink: true } }}
               sx={{ minWidth: { sm: 160 } }}
             />
           </>
         ) : null}
 
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="contained"
-            onClick={applyFilter}
-            disabled={selectedPreset === "custom" && !!customError}
-          >
-            Apply
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={clearFilter}
-            disabled={!hasActiveDateParams}
-          >
+        {hasActiveDateParams ? (
+          <Button variant="outlined" onClick={clearFilter}>
             Clear
           </Button>
-        </Box>
+        ) : null}
       </Stack>
 
       {selectedPreset === "custom" && customError ? (

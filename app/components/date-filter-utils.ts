@@ -1,8 +1,10 @@
 export const DATE_PRESETS = [
-  "last_7_days",
-  "last_30_days",
+  "this_week",
+  "last_week",
+  "next_week",
   "this_month",
   "last_month",
+  "all_time",
   "custom",
 ] as const;
 
@@ -17,7 +19,7 @@ export type DateFilterState = {
   isActive: boolean;
 };
 
-const DEFAULT_PRESET: DatePreset = "last_30_days";
+const DEFAULT_PRESET: DatePreset = "this_week";
 
 function isDatePreset(value: string): value is DatePreset {
   return DATE_PRESETS.includes(value as DatePreset);
@@ -44,35 +46,78 @@ function resolvePresetRange(preset: Exclude<DatePreset, "custom">, now: Date) {
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
 
-  if (preset === "last_7_days") {
-    const from = new Date(utcToday);
-    from.setUTCDate(from.getUTCDate() - 6);
+  if (preset === "all_time") {
     return {
-      dateFrom: formatIsoDate(from),
+      dateFrom: "1900-01-01",
       dateTo: formatIsoDate(utcToday),
     };
   }
 
-  if (preset === "last_30_days") {
+  if (preset === "this_week") {
+    const dayOfWeek = utcToday.getUTCDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
     const from = new Date(utcToday);
-    from.setUTCDate(from.getUTCDate() - 29);
+    from.setUTCDate(from.getUTCDate() - daysSinceMonday);
+
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + 6);
+
     return {
       dateFrom: formatIsoDate(from),
-      dateTo: formatIsoDate(utcToday),
+      dateTo: formatIsoDate(to),
+    };
+  }
+
+  if (preset === "last_week") {
+    const dayOfWeek = utcToday.getUTCDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const from = new Date(utcToday);
+    from.setUTCDate(from.getUTCDate() - daysSinceMonday - 7);
+
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + 6);
+
+    return {
+      dateFrom: formatIsoDate(from),
+      dateTo: formatIsoDate(to),
+    };
+  }
+
+  if (preset === "next_week") {
+    const dayOfWeek = utcToday.getUTCDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const from = new Date(utcToday);
+    from.setUTCDate(from.getUTCDate() - daysSinceMonday + 7);
+
+    const to = new Date(from);
+    to.setUTCDate(to.getUTCDate() + 6);
+
+    return {
+      dateFrom: formatIsoDate(from),
+      dateTo: formatIsoDate(to),
     };
   }
 
   if (preset === "this_month") {
     const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+    const to = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0),
+    );
+
     return {
       dateFrom: formatIsoDate(from),
-      dateTo: formatIsoDate(utcToday),
+      dateTo: formatIsoDate(to),
     };
   }
 
   const from = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1),
   );
+
   const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
 
   return {
@@ -90,6 +135,7 @@ export function getDateFilterState(
   const dateToParam = firstValue(searchParams.dateTo);
 
   const customFromValid = !!dateFromParam && isIsoDate(dateFromParam);
+
   const customToValid = !!dateToParam && isIsoDate(dateToParam);
 
   if (presetParam === "custom") {
@@ -106,6 +152,7 @@ export function getDateFilterState(
 
   if (presetParam && isDatePreset(presetParam) && presetParam !== "custom") {
     const { dateFrom, dateTo } = resolvePresetRange(presetParam, now);
+
     return {
       preset: presetParam,
       dateFrom,
