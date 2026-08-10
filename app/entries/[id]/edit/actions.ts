@@ -129,39 +129,17 @@ export async function updateEntry(
       .where(eq(dailyEntries.id, entryId));
 
     if (supportsEntryClients) {
-      try {
-        await db
-          .delete(entryClients)
-          .where(eq(entryClients.dailyEntryId, entryId));
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          /relation\s+"[^"]+"\s+does not exist/i.test(error.message)
-        ) {
-          return;
-        }
-
-        throw error;
-      }
+      await db
+        .delete(entryClients)
+        .where(eq(entryClients.dailyEntryId, entryId));
 
       if (clientIds.length > 0) {
-        try {
-          await db.insert(entryClients).values(
-            clientIds.map((clientId) => ({
-              dailyEntryId: entryId,
-              clientId,
-            })),
-          );
-        } catch (error) {
-          if (
-            error instanceof Error &&
-            /relation\s+"[^"]+"\s+does not exist/i.test(error.message)
-          ) {
-            return;
-          }
-
-          throw error;
-        }
+        await db.insert(entryClients).values(
+          clientIds.map((clientId) => ({
+            dailyEntryId: entryId,
+            clientId,
+          })),
+        );
       }
     }
 
