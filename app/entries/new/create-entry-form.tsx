@@ -1,10 +1,20 @@
 "use client";
 
 import type { EntryProjectOption } from "@/app/entries/entry-form-data";
-import { Alert, Box, Button, MenuItem, Stack, TextField } from "@mui/material";
-import { useEffect, useRef } from "react";
+import {
+  Alert,
+  Box,
+  Button,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+} from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material/Select";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import ModalCloseButton from "@/app/components/modal-close-button";
 import {
@@ -27,7 +37,7 @@ function SaveButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending} variant="contained">
+    <Button type="submit" variant="contained" disabled={pending}>
       {pending ? "Saving..." : "Create entry"}
     </Button>
   );
@@ -43,6 +53,7 @@ export default function CreateEntryForm({
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const hiddenClientIdsRef = useRef<HTMLInputElement | null>(null);
+
   const [state, formAction] = useActionState(
     action,
     initialCreateEntryFormState,
@@ -51,6 +62,7 @@ export default function CreateEntryForm({
   const selectedProject = projects.find(
     (project) => project.id === selectedProjectId,
   );
+
   const availableClients = selectedProject?.clients ?? [];
 
   const syncHiddenClientIds = (nextClientIds: string[]) => {
@@ -61,8 +73,9 @@ export default function CreateEntryForm({
     }
   };
 
-  const handleProjectChange = (event: SelectChangeEvent<string>) => {
+  const handleProjectChange = (event: SelectChangeEvent) => {
     const nextProjectId = event.target.value;
+
     const nextAvailableClientIds = new Set(
       projects
         .find((project) => project.id === nextProjectId)
@@ -70,6 +83,7 @@ export default function CreateEntryForm({
     );
 
     setSelectedProjectId(nextProjectId);
+
     syncHiddenClientIds(
       selectedClientIds.filter((clientId) =>
         nextAvailableClientIds.has(clientId),
@@ -79,6 +93,7 @@ export default function CreateEntryForm({
 
   const handleClientChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
+
     const nextClientIds =
       typeof value === "string"
         ? value.split(",").filter((clientId) => clientId.length > 0)
@@ -94,26 +109,29 @@ export default function CreateEntryForm({
   }, [selectedClientIds]);
 
   return (
-    <Box component="form" action={formAction}>
-      <Stack spacing={2.5}>
-        <TextField
-          id="projectId"
-          name="projectId"
-          label="Project"
-          select
-          value={selectedProjectId}
-          onChange={handleProjectChange}
-          required
-        >
-          <MenuItem value="" disabled>
-            Select a project
-          </MenuItem>
-          {projects.map((project) => (
-            <MenuItem key={project.id} value={project.id}>
-              {project.name}
-            </MenuItem>
-          ))}
-        </TextField>
+    <Box component="form" action={formAction} sx={{ width: "100%" }}>
+      <Stack spacing={2}>
+        <FormControl fullWidth>
+          <InputLabel id="create-entry-project-label">Project</InputLabel>
+
+          <Select
+            labelId="create-entry-project-label"
+            id="projectId"
+            name="projectId"
+            value={selectedProjectId}
+            label="Project"
+            onChange={handleProjectChange}
+            required
+          >
+            <MenuItem value="">Select a project</MenuItem>
+
+            {projects.map((project) => (
+              <MenuItem key={project.id} value={project.id}>
+                {project.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <input
           ref={hiddenClientIdsRef}
@@ -122,42 +140,41 @@ export default function CreateEntryForm({
           type="hidden"
         />
 
-        <TextField
-          id="clientIds"
-          label="Clients"
-          select
-          value={selectedClientIds}
-          onChange={handleClientChange}
+        <FormControl
+          fullWidth
           disabled={!selectedProjectId || availableClients.length === 0}
-          helperText={
-            !selectedProjectId
+        >
+          <InputLabel id="create-entry-client-label">Clients</InputLabel>
+
+          <Select
+            labelId="create-entry-client-label"
+            id="clientIds"
+            value={selectedClientIds}
+            onChange={handleClientChange}
+            multiple
+            label="Clients"
+            renderValue={(selected) =>
+              availableClients
+                .filter((client) => selected.includes(client.id))
+                .map((client) => client.name)
+                .join(", ")
+            }
+          >
+            {availableClients.map((client) => (
+              <MenuItem key={client.id} value={client.id}>
+                {client.name}
+              </MenuItem>
+            ))}
+          </Select>
+
+          <FormHelperText>
+            {!selectedProjectId
               ? "Choose a project before selecting clients."
               : availableClients.length === 0
                 ? "No clients are assigned to this project."
-                : "Optional: choose any clients assigned to this project."
-          }
-          slotProps={{
-            select: {
-              multiple: true,
-              renderValue: (selected) => {
-                const selectedIds = Array.isArray(selected)
-                  ? selected
-                  : String(selected).split(",");
-
-                return availableClients
-                  .filter((client) => selectedIds.includes(client.id))
-                  .map((client) => client.name)
-                  .join(", ");
-              },
-            },
-          }}
-        >
-          {availableClients.map((client) => (
-            <MenuItem key={client.id} value={client.id}>
-              {client.name}
-            </MenuItem>
-          ))}
-        </TextField>
+                : "Optional: choose any clients assigned to this project."}
+          </FormHelperText>
+        </FormControl>
 
         <TextField id="title" name="title" label="Title" type="text" required />
 
@@ -180,6 +197,7 @@ export default function CreateEntryForm({
 
         <Stack direction="row" spacing={1.5}>
           <SaveButton />
+
           {cancelMode === "back" ? (
             <ModalCloseButton label={cancelLabel} />
           ) : (
