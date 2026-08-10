@@ -6,10 +6,7 @@ import {
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 
-const providers: AuthProvider[] = [
-  { id: "github", name: "GitHub" },
-  { id: "google", name: "Google" },
-];
+const providers: AuthProvider[] = [{ id: "github", name: "GitHub" }];
 
 export default function SignIn() {
   return (
