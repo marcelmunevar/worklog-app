@@ -1,6 +1,5 @@
 import { db } from "@/db";
 import { clients, dailyEntries, projectClients, projects } from "@/db/schema";
-import DateRangeFilter from "@/app/components/date-range-filter";
 import {
   getDateFilterState,
   toInclusiveTimestampBounds,
@@ -148,14 +147,7 @@ export default async function ProjectsPage({
               display: "flex",
               justifyContent: { sm: "flex-end" },
             }}
-          >
-            <DateRangeFilter
-              key={`${dateFilter.preset}:${dateFilter.dateFrom}:${dateFilter.dateTo}`}
-              preset={dateFilter.preset}
-              dateFrom={dateFilter.dateFrom}
-              dateTo={dateFilter.dateTo}
-            />
-          </Box>
+          ></Box>
         </Stack>
       </Box>
 
