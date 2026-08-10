@@ -1,7 +1,15 @@
 "use client";
 
 import type { EntryProjectOption } from "@/app/entries/entry-form-data";
-import { Alert, Box, Button, MenuItem, Stack, TextField } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+} from "@mui/material";
 import { useEffect, useRef } from "react";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { useActionState, useState } from "react";
@@ -107,21 +115,19 @@ export default function EditEntryForm({
   return (
     <Box component="form" action={formAction}>
       <Stack spacing={2.5}>
-        <TextField
+        <Select
           id="projectId"
           name="projectId"
-          label="Project"
-          select
           value={selectedProjectId}
           onChange={handleProjectChange}
-          required
+          fullWidth
         >
           {projects.map((project) => (
             <MenuItem key={project.id} value={project.id}>
               {project.name}
             </MenuItem>
           ))}
-        </TextField>
+        </Select>
 
         <input
           ref={hiddenClientIdsRef}
@@ -130,40 +136,26 @@ export default function EditEntryForm({
           type="hidden"
         />
 
-        <TextField
+        <Select
           id="clientIds"
-          label="Clients"
-          select
           value={selectedClientIds}
           onChange={handleClientChange}
+          multiple
+          fullWidth
           disabled={availableClients.length === 0}
-          helperText={
-            availableClients.length === 0
-              ? "No clients are assigned to this project."
-              : "Optional: choose any clients assigned to this project."
+          renderValue={(selected) =>
+            availableClients
+              .filter((client) => selected.includes(client.id))
+              .map((client) => client.name)
+              .join(", ")
           }
-          slotProps={{
-            select: {
-              multiple: true,
-              renderValue: (selected) => {
-                const selectedIds = Array.isArray(selected)
-                  ? selected
-                  : String(selected).split(",");
-
-                return availableClients
-                  .filter((client) => selectedIds.includes(client.id))
-                  .map((client) => client.name)
-                  .join(", ");
-              },
-            },
-          }}
         >
           {availableClients.map((client) => (
             <MenuItem key={client.id} value={client.id}>
               {client.name}
             </MenuItem>
           ))}
-        </TextField>
+        </Select>
 
         <TextField
           id="title"
