@@ -88,33 +88,7 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
       groups.get(entry.workDate)!.push(entry);
     });
 
-    if (groups.size === 0) {
-      return groups;
-    }
-
-    const dates = Array.from(groups.keys()).sort();
-
-    const startDate = new Date(dates[0]);
-    const endDate = new Date(dates[dates.length - 1]);
-
-    const allDates = new Map<string, EntryRow[]>();
-
-    const currentDate =
-      sortOrder === "asc" ? new Date(startDate) : new Date(endDate);
-
-    while (
-      sortOrder === "asc" ? currentDate <= endDate : currentDate >= startDate
-    ) {
-      const date = currentDate.toISOString().split("T")[0];
-
-      allDates.set(date, groups.get(date) ?? []);
-
-      currentDate.setDate(
-        currentDate.getDate() + (sortOrder === "asc" ? 1 : -1),
-      );
-    }
-
-    return allDates;
+    return groups;
   }, [sortedRows]);
 
   const handleSort = (column: SortColumn) => {
@@ -208,7 +182,6 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                   }}
                 >
                   {formatDateHeader(date)}
-                  {entries.length === 0 && " — no items"}
                 </TableCell>
               </TableRow>
 
