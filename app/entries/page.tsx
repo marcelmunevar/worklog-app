@@ -10,7 +10,9 @@ import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 type EntriesPageProps = {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<{
+    [key: string]: string | string[] | undefined;
+  }>;
 };
 
 async function entryClientsTableExists(): Promise<boolean> {
@@ -18,7 +20,11 @@ async function entryClientsTableExists(): Promise<boolean> {
     const result = await db.execute(
       sql`select to_regclass('public.entry_clients') as table_name`,
     );
-    const rows = result.rows as Array<{ table_name: string | null }>;
+
+    const rows = result.rows as Array<{
+      table_name: string | null;
+    }>;
+
     const tableName = rows[0]?.table_name;
 
     return (
@@ -31,8 +37,10 @@ async function entryClientsTableExists(): Promise<boolean> {
 
 export default async function EntriesPage({ searchParams }: EntriesPageProps) {
   const resolvedSearchParams = await searchParams;
+
   const dateFilter = getDateFilterState(resolvedSearchParams);
   const showDeleted = resolvedSearchParams.showDeleted === "true";
+
   const whereClause = dateFilter.isActive
     ? and(
         showDeleted ? undefined : isNull(dailyEntries.deletedAt),
@@ -57,6 +65,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           deletedAt: dailyEntries.deletedAt,
           projectDeletedAt: projects.deletedAt,
           clientName: clients.name,
+          clientAcronym: clients.acronym,
         })
         .from(dailyEntries)
         .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
@@ -79,6 +88,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           deletedAt: dailyEntries.deletedAt,
           projectDeletedAt: projects.deletedAt,
           clientName: sql<string | null>`NULL`,
+          clientAcronym: sql<string | null>`NULL`,
         })
         .from(dailyEntries)
         .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
@@ -94,10 +104,12 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       title: string;
       description: string;
       clientsLabel: string;
+      clientsAcronym: string;
       isDeleted: boolean;
       isProjectDeleted: boolean;
       deleteAction?: () => Promise<void>;
       clientNames: string[];
+      clientAcronyms: string[];
     }
   >();
 
@@ -113,6 +125,14 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
         existingEntry.clientsLabel = existingEntry.clientNames.join(", ");
       }
 
+      if (
+        entry.clientAcronym &&
+        !existingEntry.clientAcronyms.includes(entry.clientAcronym)
+      ) {
+        existingEntry.clientAcronyms.push(entry.clientAcronym);
+        existingEntry.clientsAcronym = existingEntry.clientAcronyms.join(", ");
+      }
+
       continue;
     }
 
@@ -123,7 +143,9 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       title: entry.title,
       description: entry.description ?? "",
       clientsLabel: entry.clientName ?? "",
+      clientsAcronym: entry.clientAcronym ?? "",
       clientNames: entry.clientName ? [entry.clientName] : [],
+      clientAcronyms: entry.clientAcronym ? [entry.clientAcronym] : [],
       isDeleted: entry.deletedAt !== null,
       isProjectDeleted: entry.projectDeletedAt !== null,
       deleteAction: entry.deletedAt
@@ -132,24 +154,29 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     });
   }
 
-  const entryRows = [...entryMap.values()].map(({ clientNames, ...entry }) => ({
-    ...entry,
-    clientsLabel: clientNames.length > 0 ? clientNames.join(", ") : "",
-  }));
+  const entryRows = [...entryMap.values()].map(
+    ({ clientNames, clientAcronyms, ...entry }) => ({
+      ...entry,
+      clientsLabel: clientNames.length > 0 ? clientNames.join(", ") : "",
+      clientsAcronym:
+        clientAcronyms.length > 0 ? clientAcronyms.join(", ") : "",
+    }),
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Daily Entries
-        </Typography>
+        <Typography variant="h4">Daily Entries</Typography>
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
           sx={{
             justifyContent: "space-between",
-            alignItems: { xs: "stretch", sm: "flex-start" },
+            alignItems: {
+              xs: "stretch",
+              sm: "flex-start",
+            },
             width: 1,
             mt: 1.5,
           }}
@@ -163,7 +190,9 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
               minWidth: 0,
               flexGrow: { sm: 1 },
               display: "flex",
-              justifyContent: { sm: "flex-end" },
+              justifyContent: {
+                sm: "flex-end",
+              },
             }}
           >
             <DateRangeFilter

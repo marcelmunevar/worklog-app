@@ -24,6 +24,7 @@ type EntryRow = {
   title: string;
   description: string;
   clientsLabel: string;
+  clientsAcronym: string;
   isDeleted: boolean;
   isProjectDeleted: boolean;
   deleteAction?: () => Promise<void>;
@@ -64,6 +65,8 @@ function formatDateHeader(date: string) {
 }
 
 export default function EntriesTable({ rows }: EntriesTableProps) {
+  console.log(rows);
+
   const [sortColumn, setSortColumn] = useState<SortColumn>("workDate");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
@@ -96,14 +99,19 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
 
     const allDates = new Map<string, EntryRow[]>();
 
-    const currentDate = new Date(startDate);
+    const currentDate =
+      sortOrder === "asc" ? new Date(startDate) : new Date(endDate);
 
-    while (currentDate <= endDate) {
+    while (
+      sortOrder === "asc" ? currentDate <= endDate : currentDate >= startDate
+    ) {
       const date = currentDate.toISOString().split("T")[0];
 
       allDates.set(date, groups.get(date) ?? []);
 
-      currentDate.setDate(currentDate.getDate() + 1);
+      currentDate.setDate(
+        currentDate.getDate() + (sortOrder === "asc" ? 1 : -1),
+      );
     }
 
     return allDates;
@@ -221,8 +229,9 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                   <TableCell sx={{ color: "text.secondary" }}>
                     {entry.description || "-"}
                   </TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {entry.clientsLabel || "-"}
+                  <TableCell>
+                    {entry.clientsLabel}
+                    {entry.clientsAcronym && ` (${entry.clientsAcronym})`}
                   </TableCell>
                   <TableCell>
                     {entry.isDeleted || entry.isProjectDeleted ? (
