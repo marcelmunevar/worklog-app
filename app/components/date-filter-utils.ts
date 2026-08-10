@@ -49,7 +49,7 @@ function resolvePresetRange(preset: Exclude<DatePreset, "custom">, now: Date) {
   if (preset === "all_time") {
     return {
       dateFrom: "1900-01-01",
-      dateTo: formatIsoDate(utcToday),
+      dateTo: "9999-12-31",
     };
   }
 
