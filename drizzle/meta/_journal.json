@@ -29,6 +29,13 @@
       "when": 1786156316021,
       "tag": "0003_sleepy_pixie",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786568514513,
+      "tag": "0004_bumpy_sabretooth",
+      "breakpoints": true
     }
   ]
 }
