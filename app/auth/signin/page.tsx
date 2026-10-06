@@ -5,6 +5,7 @@ import {
 } from "@toolpad/core/SignInPage";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
+import { SignInSubtitle } from "./signin-subtitle";
 
 const providers: AuthProvider[] = [{ id: "github", name: "GitHub" }];
 
@@ -12,6 +13,8 @@ export default function SignIn() {
   return (
     <SignInPage
       providers={providers}
+      // Default subtitle passes the removed `textAlign` system prop to the DOM.
+      slots={{ subtitle: SignInSubtitle }}
       signIn={async (
         provider: AuthProvider,
         formData: FormData,
