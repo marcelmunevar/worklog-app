@@ -2,6 +2,7 @@
 
 import { db } from "@/db";
 import { clients } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { type CreateClientFormState } from "./form-state";
 
@@ -9,6 +10,7 @@ export async function createClient(
   _prevState: CreateClientFormState,
   formData: FormData,
 ): Promise<CreateClientFormState> {
+  const worklogId = await requireWorklogId();
   const name = String(formData.get("name") ?? "").trim();
   const acronym = String(formData.get("acronym") ?? "").trim();
 
@@ -21,6 +23,7 @@ export async function createClient(
 
   try {
     await db.insert(clients).values({
+      worklogId,
       name,
       acronym: acronym || null,
     });

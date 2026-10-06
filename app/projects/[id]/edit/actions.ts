@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type EditProjectFormState } from "./form-state";
@@ -22,6 +23,7 @@ export async function updateProject(
   _prevState: EditProjectFormState,
   formData: FormData,
 ): Promise<EditProjectFormState> {
+  const worklogId = await requireWorklogId();
   const name = String(formData.get("name") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -38,7 +40,13 @@ export async function updateProject(
     const validClients = await db
       .select({ id: clients.id })
       .from(clients)
-      .where(and(inArray(clients.id, clientIds), isNull(clients.deletedAt)));
+      .where(
+        and(
+          eq(clients.worklogId, worklogId),
+          inArray(clients.id, clientIds),
+          isNull(clients.deletedAt),
+        ),
+      );
 
     if (validClients.length !== clientIds.length) {
       return {
@@ -49,14 +57,19 @@ export async function updateProject(
   }
 
   try {
-    await db
+    const [updatedProject] = await db
       .update(projects)
       .set({
         name,
         status,
         description: description || null,
       })
-      .where(eq(projects.id, projectId));
+      .where(and(eq(projects.id, projectId), eq(projects.worklogId, worklogId)))
+      .returning({ id: projects.id });
+
+    if (!updatedProject) {
+      return { status: "error", message: "Project is no longer available." };
+    }
 
     await db
       .delete(projectClients)
@@ -87,10 +100,11 @@ export async function updateProject(
 }
 
 export async function deleteProject(projectId: string) {
+  const worklogId = await requireWorklogId();
   await db
     .update(projects)
     .set({ deletedAt: new Date() })
-    .where(eq(projects.id, projectId));
+    .where(and(eq(projects.id, projectId), eq(projects.worklogId, worklogId)));
 
   revalidatePath("/projects");
   revalidatePath("/entries");

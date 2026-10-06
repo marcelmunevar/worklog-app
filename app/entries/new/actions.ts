@@ -9,6 +9,7 @@ import {
   projects,
 } from "@/db/schema";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { type CreateEntryFormState } from "./form-state";
 
@@ -64,6 +65,7 @@ export async function createEntry(
   _prevState: CreateEntryFormState,
   formData: FormData,
 ): Promise<CreateEntryFormState> {
+  const worklogId = await requireWorklogId();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -80,7 +82,13 @@ export async function createEntry(
   const [project] = await db
     .select({ id: projects.id })
     .from(projects)
-    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.worklogId, worklogId),
+        isNull(projects.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!project) {
@@ -103,6 +111,7 @@ export async function createEntry(
       .where(
         and(
           eq(projectClients.projectId, projectId),
+          eq(clients.worklogId, worklogId),
           inArray(projectClients.clientId, clientIds),
         ),
       );
@@ -119,6 +128,7 @@ export async function createEntry(
     const [entry] = await db
       .insert(dailyEntries)
       .values({
+        worklogId,
         projectId,
         title,
         description: description || null,

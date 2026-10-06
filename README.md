@@ -36,10 +36,27 @@ AUTH_GITHUB_SECRET="your-github-oauth-client-secret"
 
 Set the GitHub OAuth application's callback URL to `http://localhost:3000/api/auth/callback/github` for local development. Generate an Auth.js secret with `pnpm exec auth secret` or another secure random value. Keep `.env.local` out of source control.
 
-Apply the checked-in database migrations, then start the development server:
+For an existing database, before applying the next migration, set
+`LEGACY_WORKLOG_OWNER_ID` to the `users.id` of the account that should own
+existing clients, projects, and entries. The backfill script reads
+`DATABASE_URL` and `LEGACY_WORKLOG_OWNER_ID` from the process environment or
+`.env.local`, verifies the owner exists, and assigns unowned records in a single
+transaction. Back up the database before running it.
+
+```bash
+pnpm db:backfill-worklog
+pnpm db:migrate
+```
+
+For a new database, skip the backfill and apply the checked-in migrations:
 
 ```bash
 pnpm db:migrate
+```
+
+Then start the development server:
+
+```bash
 pnpm dev
 ```
 
@@ -47,14 +64,15 @@ Open [http://localhost:3000](http://localhost:3000). The home route redirects to
 
 ## Scripts
 
-| Command            | Description                                       |
-| ------------------ | ------------------------------------------------- |
-| `pnpm dev`         | Start the local development server.               |
-| `pnpm build`       | Create a production build.                        |
-| `pnpm start`       | Serve the production build.                       |
-| `pnpm lint`        | Run ESLint.                                       |
-| `pnpm db:generate` | Generate a Drizzle migration from schema changes. |
-| `pnpm db:migrate`  | Apply pending Drizzle migrations.                 |
+| Command                    | Description                                                |
+| -------------------------- | ---------------------------------------------------------- |
+| `pnpm dev`                 | Start the local development server.                        |
+| `pnpm build`               | Create a production build.                                 |
+| `pnpm start`               | Serve the production build.                                |
+| `pnpm lint`                | Run ESLint.                                                |
+| `pnpm db:generate`         | Generate a Drizzle migration from schema changes.          |
+| `pnpm db:migrate`          | Apply pending Drizzle migrations.                          |
+| `pnpm db:backfill-worklog` | Assign existing unowned records to the configured account. |
 
 ## Tech Stack
 

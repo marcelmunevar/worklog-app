@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { Container, Paper, Typography } from "@mui/material";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -14,6 +15,7 @@ export default async function EditProjectPage({
   params,
 }: EditProjectPageProps) {
   const { id } = await params;
+  const worklogId = await requireWorklogId();
 
   const [project] = await db
     .select({
@@ -23,7 +25,13 @@ export default async function EditProjectPage({
       description: projects.description,
     })
     .from(projects)
-    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.id, id),
+        eq(projects.worklogId, worklogId),
+        isNull(projects.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!project) {
@@ -33,7 +41,7 @@ export default async function EditProjectPage({
   const allClients = await db
     .select({ id: clients.id, name: clients.name })
     .from(clients)
-    .where(isNull(clients.deletedAt))
+    .where(and(eq(clients.worklogId, worklogId), isNull(clients.deletedAt)))
     .orderBy(asc(clients.name));
 
   const assignedClients = await db
@@ -41,7 +49,11 @@ export default async function EditProjectPage({
     .from(projectClients)
     .innerJoin(
       clients,
-      and(eq(projectClients.clientId, clients.id), isNull(clients.deletedAt)),
+      and(
+        eq(projectClients.clientId, clients.id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
     )
     .where(eq(projectClients.projectId, id));
 

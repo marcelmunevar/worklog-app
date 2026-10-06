@@ -2,7 +2,8 @@
 
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
-import { and, inArray, isNull } from "drizzle-orm";
+import { requireWorklogId } from "@/lib/worklog-access";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type CreateProjectFormState } from "./form-state";
 
@@ -20,6 +21,7 @@ export async function createProject(
   _prevState: CreateProjectFormState,
   formData: FormData,
 ): Promise<CreateProjectFormState> {
+  const worklogId = await requireWorklogId();
   const name = String(formData.get("name") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -36,7 +38,13 @@ export async function createProject(
     const validClients = await db
       .select({ id: clients.id })
       .from(clients)
-      .where(and(inArray(clients.id, clientIds), isNull(clients.deletedAt)));
+      .where(
+        and(
+          eq(clients.worklogId, worklogId),
+          inArray(clients.id, clientIds),
+          isNull(clients.deletedAt),
+        ),
+      );
 
     if (validClients.length !== clientIds.length) {
       return {
@@ -50,6 +58,7 @@ export async function createProject(
     const [project] = await db
       .insert(projects)
       .values({
+        worklogId,
         name,
         status,
         description: description || null,

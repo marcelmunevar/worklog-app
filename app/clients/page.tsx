@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import NavButton from "@/app/components/nav-button";
 import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
 import { deleteClient } from "./[id]/edit/actions";
@@ -24,6 +25,7 @@ type ClientsPageProps = {
 };
 
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
+  const worklogId = await requireWorklogId();
   const resolvedSearchParams = await searchParams;
   const showDeleted = resolvedSearchParams.showDeleted === "true";
 
@@ -45,7 +47,12 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         isNull(projects.deletedAt),
       ),
     )
-    .where(showDeleted ? undefined : isNull(clients.deletedAt))
+    .where(
+      and(
+        eq(clients.worklogId, worklogId),
+        showDeleted ? undefined : isNull(clients.deletedAt),
+      ),
+    )
     .groupBy(clients.id, clients.name, clients.acronym, clients.createdAt)
     .orderBy(desc(clients.createdAt));
 

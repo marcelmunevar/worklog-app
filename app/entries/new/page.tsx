@@ -3,6 +3,8 @@ import { getEntryProjectOptions } from "@/app/entries/entry-form-data";
 import { createEntry } from "./actions";
 import CreateEntryForm from "./create-entry-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewEntryPage() {
   const allProjects = await getEntryProjectOptions();
 

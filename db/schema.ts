@@ -5,6 +5,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -99,7 +100,8 @@ export const worklogMembers = pgTable(
 
     userId: text("user_id")
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id)
+      .unique(),
 
     role: text("role").notNull().default("owner"),
   },
@@ -110,24 +112,34 @@ export const worklogMembers = pgTable(
   ],
 );
 
-export const clients = pgTable("clients", {
-  id: uuid("id").defaultRandom().primaryKey(),
+export const clients = pgTable(
+  "clients",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
 
-  worklogId: uuid("worklog_id").references(() => worklogs.id),
+    worklogId: uuid("worklog_id")
+      .notNull()
+      .references(() => worklogs.id),
 
-  name: text("name").notNull().unique(),
+    name: text("name").notNull(),
 
-  acronym: text("acronym"),
+    acronym: text("acronym"),
 
-  createdAt: timestamp("created_at").defaultNow(),
+    createdAt: timestamp("created_at").defaultNow(),
 
-  deletedAt: timestamp("deleted_at"),
-});
+    deletedAt: timestamp("deleted_at"),
+  },
+  (table) => [
+    unique("clients_worklog_id_name_unique").on(table.worklogId, table.name),
+  ],
+);
 
 export const projects = pgTable("projects", {
   id: uuid("id").defaultRandom().primaryKey(),
 
-  worklogId: uuid("worklog_id").references(() => worklogs.id),
+  worklogId: uuid("worklog_id")
+    .notNull()
+    .references(() => worklogs.id),
 
   name: text("name").notNull(),
 
@@ -155,7 +167,9 @@ export const projectClients = pgTable("project_clients", {
 export const dailyEntries = pgTable("daily_entries", {
   id: uuid("id").defaultRandom().primaryKey(),
 
-  worklogId: uuid("worklog_id").references(() => worklogs.id),
+  worklogId: uuid("worklog_id")
+    .notNull()
+    .references(() => worklogs.id),
 
   projectId: uuid("project_id")
     .notNull()

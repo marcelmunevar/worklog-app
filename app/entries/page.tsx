@@ -6,6 +6,7 @@ import EntriesTable from "./entries-table";
 import ShowDeletedToggle from "./show-deleted-toggle";
 import { db } from "@/db";
 import { clients, dailyEntries, entryClients, projects } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
 import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
@@ -36,20 +37,24 @@ async function entryClientsTableExists(): Promise<boolean> {
 }
 
 export default async function EntriesPage({ searchParams }: EntriesPageProps) {
+  const worklogId = await requireWorklogId();
   const resolvedSearchParams = await searchParams;
 
   const dateFilter = getDateFilterState(resolvedSearchParams);
   const showDeleted = resolvedSearchParams.showDeleted === "true";
 
-  const whereClause = dateFilter.isActive
-    ? and(
-        showDeleted ? undefined : isNull(dailyEntries.deletedAt),
-        gte(dailyEntries.workDate, dateFilter.dateFrom),
-        lte(dailyEntries.workDate, dateFilter.dateTo),
-      )
-    : showDeleted
-      ? undefined
-      : isNull(dailyEntries.deletedAt);
+  const whereClause = and(
+    eq(dailyEntries.worklogId, worklogId),
+    dateFilter.isActive
+      ? and(
+          showDeleted ? undefined : isNull(dailyEntries.deletedAt),
+          gte(dailyEntries.workDate, dateFilter.dateFrom),
+          lte(dailyEntries.workDate, dateFilter.dateTo),
+        )
+      : showDeleted
+        ? undefined
+        : isNull(dailyEntries.deletedAt),
+  );
 
   const supportsEntryClients = await entryClientsTableExists();
 
@@ -68,9 +73,21 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           clientAcronym: clients.acronym,
         })
         .from(dailyEntries)
-        .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
+        .innerJoin(
+          projects,
+          and(
+            eq(dailyEntries.projectId, projects.id),
+            eq(projects.worklogId, worklogId),
+          ),
+        )
         .leftJoin(entryClients, eq(entryClients.dailyEntryId, dailyEntries.id))
-        .leftJoin(clients, eq(entryClients.clientId, clients.id))
+        .leftJoin(
+          clients,
+          and(
+            eq(entryClients.clientId, clients.id),
+            eq(clients.worklogId, worklogId),
+          ),
+        )
         .where(whereClause)
         .orderBy(
           desc(dailyEntries.workDate),
@@ -91,7 +108,13 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           clientAcronym: sql<string | null>`NULL`,
         })
         .from(dailyEntries)
-        .innerJoin(projects, eq(dailyEntries.projectId, projects.id))
+        .innerJoin(
+          projects,
+          and(
+            eq(dailyEntries.projectId, projects.id),
+            eq(projects.worklogId, worklogId),
+          ),
+        )
         .where(whereClause)
         .orderBy(desc(dailyEntries.workDate), desc(dailyEntries.createdAt));
 

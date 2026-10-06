@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { Container, Paper, Typography } from "@mui/material";
 import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -12,6 +13,7 @@ type EditClientPageProps = {
 
 export default async function EditClientPage({ params }: EditClientPageProps) {
   const { id } = await params;
+  const worklogId = await requireWorklogId();
 
   const [client] = await db
     .select({
@@ -20,7 +22,13 @@ export default async function EditClientPage({ params }: EditClientPageProps) {
       acronym: clients.acronym,
     })
     .from(clients)
-    .where(and(eq(clients.id, id), isNull(clients.deletedAt)))
+    .where(
+      and(
+        eq(clients.id, id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!client) {

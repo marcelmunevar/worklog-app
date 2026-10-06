@@ -43,6 +43,13 @@
       "when": 1786568870504,
       "tag": "0005_unusual_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791309775463,
+      "tag": "0006_spooky_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

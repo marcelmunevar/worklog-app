@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { requireWorklogId } from "@/lib/worklog-access";
 import {
   clients,
   dailyEntries,
@@ -36,6 +37,7 @@ async function entryClientsTableExists(): Promise<boolean> {
 }
 
 export async function getEntryProjectOptions(): Promise<EntryProjectOption[]> {
+  const worklogId = await requireWorklogId();
   const rows = await db
     .select({
       projectId: projects.id,
@@ -47,9 +49,13 @@ export async function getEntryProjectOptions(): Promise<EntryProjectOption[]> {
     .leftJoin(projectClients, eq(projectClients.projectId, projects.id))
     .leftJoin(
       clients,
-      and(eq(projectClients.clientId, clients.id), isNull(clients.deletedAt)),
+      and(
+        eq(projectClients.clientId, clients.id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
     )
-    .where(isNull(projects.deletedAt))
+    .where(and(eq(projects.worklogId, worklogId), isNull(projects.deletedAt)))
     .orderBy(asc(projects.name), asc(clients.name));
 
   const projectMap = new Map<string, EntryProjectOption>();
@@ -81,6 +87,7 @@ export async function getEntryProjectOptions(): Promise<EntryProjectOption[]> {
 export async function getEntryAssignedClientIds(
   entryId: string,
 ): Promise<string[]> {
+  const worklogId = await requireWorklogId();
   const supportsEntryClients = await entryClientsTableExists();
 
   if (!supportsEntryClients) {
@@ -92,12 +99,17 @@ export async function getEntryAssignedClientIds(
     .from(entryClients)
     .innerJoin(
       clients,
-      and(eq(entryClients.clientId, clients.id), isNull(clients.deletedAt)),
+      and(
+        eq(entryClients.clientId, clients.id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
     )
     .innerJoin(
       dailyEntries,
       and(
         eq(entryClients.dailyEntryId, dailyEntries.id),
+        eq(dailyEntries.worklogId, worklogId),
         isNull(dailyEntries.deletedAt),
       ),
     )

@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients, projectClients, projects } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import ModalShell from "@/app/@modal/modal-shell";
@@ -14,6 +15,7 @@ export default async function EditProjectModalPage({
   params,
 }: EditProjectModalPageProps) {
   const { id } = await params;
+  const worklogId = await requireWorklogId();
 
   const [project] = await db
     .select({
@@ -23,7 +25,13 @@ export default async function EditProjectModalPage({
       description: projects.description,
     })
     .from(projects)
-    .where(and(eq(projects.id, id), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.id, id),
+        eq(projects.worklogId, worklogId),
+        isNull(projects.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!project) {
@@ -33,7 +41,7 @@ export default async function EditProjectModalPage({
   const allClients = await db
     .select({ id: clients.id, name: clients.name })
     .from(clients)
-    .where(isNull(clients.deletedAt))
+    .where(and(eq(clients.worklogId, worklogId), isNull(clients.deletedAt)))
     .orderBy(asc(clients.name));
 
   const assignedClients = await db
@@ -41,7 +49,11 @@ export default async function EditProjectModalPage({
     .from(projectClients)
     .innerJoin(
       clients,
-      and(eq(projectClients.clientId, clients.id), isNull(clients.deletedAt)),
+      and(
+        eq(projectClients.clientId, clients.id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
     )
     .where(eq(projectClients.projectId, id));
 

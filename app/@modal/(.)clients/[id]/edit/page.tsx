@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import ModalShell from "@/app/@modal/modal-shell";
@@ -14,6 +15,7 @@ export default async function EditClientModalPage({
   params,
 }: EditClientModalPageProps) {
   const { id } = await params;
+  const worklogId = await requireWorklogId();
 
   const [client] = await db
     .select({
@@ -22,7 +24,13 @@ export default async function EditClientModalPage({
       acronym: clients.acronym,
     })
     .from(clients)
-    .where(and(eq(clients.id, id), isNull(clients.deletedAt)))
+    .where(
+      and(
+        eq(clients.id, id),
+        eq(clients.worklogId, worklogId),
+        isNull(clients.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!client) {

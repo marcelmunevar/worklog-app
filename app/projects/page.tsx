@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { clients, dailyEntries, projectClients, projects } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import {
   getDateFilterState,
   toInclusiveTimestampBounds,
@@ -30,25 +31,29 @@ function formatDate(dateValue: Date | null) {
 export default async function ProjectsPage({
   searchParams,
 }: ProjectsPageProps) {
+  const worklogId = await requireWorklogId();
   const resolvedSearchParams = await searchParams;
   const dateFilter = getDateFilterState(resolvedSearchParams);
   const showDeleted = resolvedSearchParams.showDeleted === "true";
-  const whereClause = dateFilter.isActive
-    ? (() => {
-        const { from, to } = toInclusiveTimestampBounds(
-          dateFilter.dateFrom,
-          dateFilter.dateTo,
-        );
+  const whereClause = and(
+    eq(projects.worklogId, worklogId),
+    dateFilter.isActive
+      ? (() => {
+          const { from, to } = toInclusiveTimestampBounds(
+            dateFilter.dateFrom,
+            dateFilter.dateTo,
+          );
 
-        return and(
-          showDeleted ? undefined : isNull(projects.deletedAt),
-          gte(projects.createdAt, from),
-          lte(projects.createdAt, to),
-        );
-      })()
-    : showDeleted
-      ? undefined
-      : isNull(projects.deletedAt);
+          return and(
+            showDeleted ? undefined : isNull(projects.deletedAt),
+            gte(projects.createdAt, from),
+            lte(projects.createdAt, to),
+          );
+        })()
+      : showDeleted
+        ? undefined
+        : isNull(projects.deletedAt),
+  );
 
   const projectList = await db
     .select({
@@ -65,6 +70,7 @@ export default async function ProjectsPage({
       dailyEntries,
       and(
         eq(dailyEntries.projectId, projects.id),
+        eq(dailyEntries.worklogId, worklogId),
         isNull(dailyEntries.deletedAt),
       ),
     )
@@ -84,8 +90,21 @@ export default async function ProjectsPage({
       clientName: clients.name,
     })
     .from(projectClients)
-    .innerJoin(clients, eq(projectClients.clientId, clients.id))
-    .where(isNull(clients.deletedAt));
+    .innerJoin(
+      projects,
+      and(
+        eq(projectClients.projectId, projects.id),
+        eq(projects.worklogId, worklogId),
+      ),
+    )
+    .innerJoin(
+      clients,
+      and(
+        eq(projectClients.clientId, clients.id),
+        eq(clients.worklogId, worklogId),
+      ),
+    )
+    .where(and(eq(clients.worklogId, worklogId), isNull(clients.deletedAt)));
 
   const clientsByProjectId = clientAssignments.reduce<Record<string, string[]>>(
     (accumulator, assignment) => {

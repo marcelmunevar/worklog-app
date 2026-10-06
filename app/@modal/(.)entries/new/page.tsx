@@ -6,6 +6,8 @@ import { getEntryProjectOptions } from "@/app/entries/entry-form-data";
 import { createEntry } from "@/app/entries/new/actions";
 import CreateEntryForm from "@/app/entries/new/create-entry-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewEntryModalPage() {
   const allProjects = await getEntryProjectOptions();
 

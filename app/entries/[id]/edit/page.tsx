@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { dailyEntries } from "@/db/schema";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { Container, Paper, Typography } from "@mui/material";
 import { and, eq, isNull } from "drizzle-orm";
 import { notFound } from "next/navigation";
@@ -16,6 +17,7 @@ type EditEntryPageProps = {
 
 export default async function EditEntryPage({ params }: EditEntryPageProps) {
   const { id } = await params;
+  const worklogId = await requireWorklogId();
 
   const [entry] = await db
     .select({
@@ -26,7 +28,13 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
       description: dailyEntries.description,
     })
     .from(dailyEntries)
-    .where(and(eq(dailyEntries.id, id), isNull(dailyEntries.deletedAt)))
+    .where(
+      and(
+        eq(dailyEntries.id, id),
+        eq(dailyEntries.worklogId, worklogId),
+        isNull(dailyEntries.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!entry) {

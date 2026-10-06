@@ -9,6 +9,7 @@ import {
   projects,
 } from "@/db/schema";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { type EditEntryFormState } from "./form-state";
@@ -66,6 +67,7 @@ export async function updateEntry(
   _prevState: EditEntryFormState,
   formData: FormData,
 ): Promise<EditEntryFormState> {
+  const worklogId = await requireWorklogId();
   const projectId = String(formData.get("projectId") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -82,7 +84,13 @@ export async function updateEntry(
   const [project] = await db
     .select({ id: projects.id })
     .from(projects)
-    .where(and(eq(projects.id, projectId), isNull(projects.deletedAt)))
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.worklogId, worklogId),
+        isNull(projects.deletedAt),
+      ),
+    )
     .limit(1);
 
   if (!project) {
@@ -105,6 +113,7 @@ export async function updateEntry(
       .where(
         and(
           eq(projectClients.projectId, projectId),
+          eq(clients.worklogId, worklogId),
           inArray(projectClients.clientId, clientIds),
         ),
       );
@@ -118,7 +127,7 @@ export async function updateEntry(
   }
 
   try {
-    await db
+    const [updatedEntry] = await db
       .update(dailyEntries)
       .set({
         projectId,
@@ -126,7 +135,17 @@ export async function updateEntry(
         description: description || null,
         workDate,
       })
-      .where(eq(dailyEntries.id, entryId));
+      .where(
+        and(
+          eq(dailyEntries.id, entryId),
+          eq(dailyEntries.worklogId, worklogId),
+        ),
+      )
+      .returning({ id: dailyEntries.id });
+
+    if (!updatedEntry) {
+      return { status: "error", message: "Entry is no longer available." };
+    }
 
     if (supportsEntryClients) {
       await db
@@ -164,10 +183,13 @@ export async function updateEntry(
 }
 
 export async function deleteEntry(entryId: string) {
+  const worklogId = await requireWorklogId();
   await db
     .update(dailyEntries)
     .set({ deletedAt: new Date() })
-    .where(eq(dailyEntries.id, entryId));
+    .where(
+      and(eq(dailyEntries.id, entryId), eq(dailyEntries.worklogId, worklogId)),
+    );
 
   revalidatePath("/entries");
   revalidatePath("/projects");
