@@ -209,47 +209,19 @@ export async function updateEntryField(
   ) {
     retainedClientIds = [];
   } else if (field === "projectId" && (await entryClientsTableExists())) {
-    const [entry] = await db
-      .select({ projectId: dailyEntries.projectId })
-      .from(dailyEntries)
-      .where(
+    const projectClientRows = await db
+      .select({ clientId: projectClients.clientId })
+      .from(projectClients)
+      .innerJoin(
+        clients,
         and(
-          eq(dailyEntries.id, entryId),
-          eq(dailyEntries.worklogId, worklogId),
-          isNull(dailyEntries.deletedAt),
+          eq(projectClients.clientId, clients.id),
+          eq(clients.worklogId, worklogId),
+          isNull(clients.deletedAt),
         ),
       )
-      .limit(1);
-
-    if (!entry) {
-      return { success: false, message: "Entry is no longer available." };
-    }
-
-    const assignedClients = await db
-      .select({ clientId: entryClients.clientId })
-      .from(entryClients)
-      .where(eq(entryClients.dailyEntryId, entryId));
-    const assignedClientIds = assignedClients.map((client) => client.clientId);
-    const validClients = assignedClientIds.length
-      ? await db
-          .select({ clientId: projectClients.clientId })
-          .from(projectClients)
-          .innerJoin(
-            clients,
-            and(
-              eq(projectClients.clientId, clients.id),
-              eq(clients.worklogId, worklogId),
-              isNull(clients.deletedAt),
-            ),
-          )
-          .where(
-            and(
-              eq(projectClients.projectId, normalizedValue),
-              inArray(projectClients.clientId, assignedClientIds),
-            ),
-          )
-      : [];
-    retainedClientIds = validClients.map((client) => client.clientId);
+      .where(eq(projectClients.projectId, normalizedValue));
+    retainedClientIds = projectClientRows.map((client) => client.clientId);
   }
 
   try {
