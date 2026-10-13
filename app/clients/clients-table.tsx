@@ -1,6 +1,7 @@
 "use client";
 
-import NavButton from "@/app/components/nav-button";
+import EditableTableCell from "@/app/components/editable-table-cell";
+import { updateClientField } from "@/app/clients/[id]/edit/actions";
 import {
   Box,
   Button,
@@ -130,9 +131,23 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
               key={client.id}
               sx={client.isDeleted ? { opacity: 0.7 } : undefined}
             >
-              <TableCell sx={{ fontWeight: 500 }}>{client.name}</TableCell>
+              <TableCell sx={{ fontWeight: 500 }}>
+                <EditableTableCell
+                  value={client.name}
+                  disabled={client.isDeleted}
+                  onSave={(value) =>
+                    updateClientField(client.id, "name", String(value))
+                  }
+                />
+              </TableCell>
               <TableCell sx={{ color: "text.secondary" }}>
-                {client.acronym || "-"}
+                <EditableTableCell
+                  value={client.acronym}
+                  disabled={client.isDeleted}
+                  onSave={(value) =>
+                    updateClientField(client.id, "acronym", String(value))
+                  }
+                />
               </TableCell>
               <TableCell>{client.createdAtLabel}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>
@@ -150,13 +165,6 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
                   "-"
                 ) : (
                   <Stack direction="row" spacing={1}>
-                    <NavButton
-                      href={`/clients/${client.id}/edit`}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Edit
-                    </NavButton>
                     {client.deleteAction ? (
                       <Box component="form" action={client.deleteAction}>
                         <Button

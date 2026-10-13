@@ -1,6 +1,7 @@
 "use client";
 
-import NavButton from "@/app/components/nav-button";
+import EditableTableCell from "@/app/components/editable-table-cell";
+import { updateProjectField } from "@/app/projects/[id]/edit/actions";
 import {
   Box,
   Button,
@@ -21,7 +22,7 @@ type ProjectRow = {
   id: string;
   name: string;
   description: string;
-  clientsLabel: string;
+  clientIds: string[];
   status: string;
   createdAtLabel: string;
   createdAtSortValue: number;
@@ -40,6 +41,7 @@ type SortOrder = "asc" | "desc";
 
 type ProjectsTableProps = {
   rows: ProjectRow[];
+  availableClients: Array<{ id: string; name: string }>;
 };
 
 function compareValues(a: string | number, b: string | number) {
@@ -50,7 +52,10 @@ function compareValues(a: string | number, b: string | number) {
   return String(a).localeCompare(String(b));
 }
 
-export default function ProjectsTable({ rows }: ProjectsTableProps) {
+export default function ProjectsTable({
+  rows,
+  availableClients,
+}: ProjectsTableProps) {
   const [sortColumn, setSortColumn] =
     useState<SortColumn>("createdAtSortValue");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -149,12 +154,55 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
               key={project.id}
               sx={project.isDeleted ? { opacity: 0.7 } : undefined}
             >
-              <TableCell sx={{ fontWeight: 500 }}>{project.name}</TableCell>
-              <TableCell>{project.status}</TableCell>
-              <TableCell sx={{ color: "text.secondary" }}>
-                {project.description || "-"}
+              <TableCell sx={{ fontWeight: 500 }}>
+                <EditableTableCell
+                  value={project.name}
+                  disabled={project.isDeleted}
+                  onSave={(value) =>
+                    updateProjectField(project.id, "name", String(value))
+                  }
+                />
               </TableCell>
-              <TableCell>{project.clientsLabel || "-"}</TableCell>
+              <TableCell>
+                <EditableTableCell
+                  value={project.status}
+                  disabled={project.isDeleted}
+                  onSave={(value) =>
+                    updateProjectField(project.id, "status", String(value))
+                  }
+                />
+              </TableCell>
+              <TableCell sx={{ color: "text.secondary" }}>
+                <EditableTableCell
+                  value={project.description}
+                  disabled={project.isDeleted}
+                  onSave={(value) =>
+                    updateProjectField(
+                      project.id,
+                      "description",
+                      String(value),
+                    )
+                  }
+                />
+              </TableCell>
+              <TableCell>
+                <EditableTableCell
+                  type="multiple"
+                  value={project.clientIds}
+                  options={availableClients.map((client) => ({
+                    value: client.id,
+                    label: client.name,
+                  }))}
+                  disabled={project.isDeleted}
+                  onSave={(value) =>
+                    updateProjectField(
+                      project.id,
+                      "clientIds",
+                      Array.isArray(value) ? value : [value],
+                    )
+                  }
+                />
+              </TableCell>
               <TableCell>{project.createdAtLabel}</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>
                 {project.entryCount}
@@ -171,13 +219,6 @@ export default function ProjectsTable({ rows }: ProjectsTableProps) {
                   "-"
                 ) : (
                   <Stack direction="row" spacing={1}>
-                    <NavButton
-                      href={`/projects/${project.id}/edit`}
-                      variant="outlined"
-                      size="small"
-                    >
-                      Edit
-                    </NavButton>
                     {project.deleteAction ? (
                       <Box component="form" action={project.deleteAction}>
                         <Button

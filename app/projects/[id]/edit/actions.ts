@@ -6,6 +6,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { TableFieldUpdateResult } from "@/app/components/editable-table-cell";
 import { type EditProjectFormState } from "./form-state";
 
 function parseClientIds(formData: FormData): string[] {
@@ -16,6 +17,128 @@ function parseClientIds(formData: FormData): string[] {
     .filter((value) => value.length > 0);
 
   return [...new Set(parsed)];
+}
+
+export async function updateProjectField(
+  projectId: string,
+  field: "name" | "status" | "description" | "clientIds",
+  value: string | string[],
+): Promise<TableFieldUpdateResult> {
+  const worklogId = await requireWorklogId();
+  if (
+    field !== "name" &&
+    field !== "status" &&
+    field !== "description" &&
+    field !== "clientIds"
+  ) {
+    return { success: false, message: "Invalid project field." };
+  }
+
+  if (field === "clientIds") {
+    if (
+      !Array.isArray(value) ||
+      !value.every((clientId): clientId is string => typeof clientId === "string")
+    ) {
+      return { success: false, message: "Invalid client selection." };
+    }
+
+    const clientIds = [...new Set(value.map((id) => id.trim()).filter(Boolean))];
+    const validClients = clientIds.length
+      ? await db
+          .select({ id: clients.id })
+          .from(clients)
+          .where(
+            and(
+              eq(clients.worklogId, worklogId),
+              inArray(clients.id, clientIds),
+              isNull(clients.deletedAt),
+            ),
+          )
+      : [];
+
+    if (validClients.length !== clientIds.length) {
+      return {
+        success: false,
+        message: "One or more selected clients are invalid.",
+      };
+    }
+
+    try {
+      const [project] = await db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(
+          and(
+            eq(projects.id, projectId),
+            eq(projects.worklogId, worklogId),
+            isNull(projects.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!project) {
+        return { success: false, message: "Project is no longer available." };
+      }
+
+      await db.delete(projectClients).where(eq(projectClients.projectId, projectId));
+      if (clientIds.length > 0) {
+        await db.insert(projectClients).values(
+          clientIds.map((clientId) => ({ projectId, clientId })),
+        );
+      }
+
+      revalidatePath("/projects");
+      revalidatePath("/entries");
+      return { success: true };
+    } catch {
+      return {
+        success: false,
+        message: "Could not save the project clients. Please try again.",
+      };
+    }
+  }
+
+  if (typeof value !== "string") {
+    return { success: false, message: "Invalid field value." };
+  }
+
+  const normalizedValue = value.trim();
+  if ((field === "name" || field === "status") && !normalizedValue) {
+    return {
+      success: false,
+      message: field === "name" ? "Project name is required." : "Status is required.",
+    };
+  }
+
+  try {
+    const [updatedProject] = await db
+      .update(projects)
+      .set(
+        field === "name"
+          ? { name: normalizedValue }
+          : field === "status"
+            ? { status: normalizedValue }
+            : { description: normalizedValue || null },
+      )
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.worklogId, worklogId),
+          isNull(projects.deletedAt),
+        ),
+      )
+      .returning({ id: projects.id });
+
+    if (!updatedProject) {
+      return { success: false, message: "Project is no longer available." };
+    }
+
+    revalidatePath("/projects");
+    revalidatePath("/entries");
+    return { success: true };
+  } catch {
+    return { success: false, message: "Could not save the project. Please try again." };
+  }
 }
 
 export async function updateProject(

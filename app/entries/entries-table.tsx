@@ -1,6 +1,8 @@
 "use client";
 
-import NavButton from "@/app/components/nav-button";
+import EditableTableCell from "@/app/components/editable-table-cell";
+import { updateEntryField } from "@/app/entries/[id]/edit/actions";
+import type { EntryProjectOption } from "@/app/entries/entry-form-data";
 import {
   Box,
   Button,
@@ -19,12 +21,14 @@ import { Fragment, useMemo, useState } from "react";
 
 type EntryRow = {
   id: string;
+  projectId: string;
   workDate: string;
   projectName: string;
   title: string;
   description: string;
   clientsLabel: string;
   clientsAcronym: string;
+  clientIds: string[];
   isDeleted: boolean;
   isProjectDeleted: boolean;
   deleteAction?: () => Promise<void>;
@@ -40,18 +44,11 @@ type SortOrder = "asc" | "desc";
 
 type EntriesTableProps = {
   rows: EntryRow[];
+  projects: EntryProjectOption[];
 };
 
 function compareValues(a: string, b: string) {
   return a.localeCompare(b);
-}
-
-function formatEntryDate(date: string) {
-  const [year, month, day] = date.split("-").map(Number);
-
-  return `${month.toString().padStart(2, "0")}/${day
-    .toString()
-    .padStart(2, "0")}/${year}`;
 }
 
 function formatDateHeader(date: string) {
@@ -64,9 +61,7 @@ function formatDateHeader(date: string) {
   }).format(new Date(year, month - 1, day));
 }
 
-export default function EntriesTable({ rows }: EntriesTableProps) {
-  console.log(rows);
-
+export default function EntriesTable({ rows, projects }: EntriesTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("workDate");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
@@ -194,17 +189,97 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                       : undefined
                   }
                 >
-                  <TableCell>{formatEntryDate(entry.workDate)}</TableCell>
-                  <TableCell sx={{ fontWeight: 500 }}>
-                    {entry.projectName}
+                  <TableCell>
+                    <EditableTableCell
+                      type="date"
+                      value={entry.workDate}
+                      disabled={entry.isDeleted || entry.isProjectDeleted}
+                      onSave={(value) =>
+                        updateEntryField(
+                          entry.id,
+                          "workDate",
+                          String(value),
+                        )
+                      }
+                    />
                   </TableCell>
-                  <TableCell>{entry.title}</TableCell>
-                  <TableCell sx={{ color: "text.secondary" }}>
-                    {entry.description || "-"}
+                  <TableCell sx={{ fontWeight: 500 }}>
+                    <EditableTableCell
+                      type="select"
+                      value={entry.projectId}
+                      emptyLabel={entry.projectName}
+                      options={projects.map((project) => ({
+                        value: project.id,
+                        label: project.name,
+                      }))}
+                      disabled={entry.isDeleted || entry.isProjectDeleted}
+                      onSave={(value) =>
+                        updateEntryField(
+                          entry.id,
+                          "projectId",
+                          String(value),
+                        )
+                      }
+                    />
                   </TableCell>
                   <TableCell>
-                    {entry.clientsLabel}
-                    {entry.clientsAcronym && ` (${entry.clientsAcronym})`}
+                    <EditableTableCell
+                      value={entry.title}
+                      disabled={entry.isDeleted || entry.isProjectDeleted}
+                      onSave={(value) =>
+                        updateEntryField(entry.id, "title", String(value))
+                      }
+                    />
+                  </TableCell>
+                  <TableCell sx={{ color: "text.secondary" }}>
+                    <EditableTableCell
+                      value={entry.description}
+                      disabled={entry.isDeleted || entry.isProjectDeleted}
+                      onSave={(value) =>
+                        updateEntryField(
+                          entry.id,
+                          "description",
+                          String(value),
+                        )
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <EditableTableCell
+                      type="multiple"
+                      value={entry.clientIds}
+                      emptyLabel={
+                        entry.clientsLabel
+                          ? `${entry.clientsLabel}${
+                              entry.clientsAcronym
+                                ? ` (${entry.clientsAcronym})`
+                                : ""
+                            }`
+                          : "-"
+                      }
+                      options={
+                        projects
+                          .find((project) => project.id === entry.projectId)
+                          ?.clients.map((client) => ({
+                            value: client.id,
+                            label: client.name,
+                          })) ?? []
+                      }
+                      disabled={
+                        entry.isDeleted ||
+                        entry.isProjectDeleted ||
+                        !projects.some(
+                          (project) => project.id === entry.projectId,
+                        )
+                      }
+                      onSave={(value) =>
+                        updateEntryField(
+                          entry.id,
+                          "clientIds",
+                          Array.isArray(value) ? value : [value],
+                        )
+                      }
+                    />
                   </TableCell>
                   <TableCell>
                     {entry.isDeleted || entry.isProjectDeleted ? (
@@ -245,13 +320,6 @@ export default function EntriesTable({ rows }: EntriesTableProps) {
                       </Stack>
                     ) : (
                       <Stack direction="row" spacing={1}>
-                        <NavButton
-                          href={`/entries/${entry.id}/edit`}
-                          variant="outlined"
-                          size="small"
-                        >
-                          Edit
-                        </NavButton>
                         {entry.deleteAction ? (
                           <Box component="form" action={entry.deleteAction}>
                             <Button

@@ -10,7 +10,7 @@ import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
 import { deleteProject } from "./[id]/edit/actions";
 import ProjectsTable from "./projects-table";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
 
 type ProjectsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -87,7 +87,7 @@ export default async function ProjectsPage({
   const clientAssignments = await db
     .select({
       projectId: projectClients.projectId,
-      clientName: clients.name,
+      clientId: projectClients.clientId,
     })
     .from(projectClients)
     .innerJoin(
@@ -106,18 +106,23 @@ export default async function ProjectsPage({
     )
     .where(and(eq(clients.worklogId, worklogId), isNull(clients.deletedAt)));
 
-  const clientsByProjectId = clientAssignments.reduce<Record<string, string[]>>(
+  const availableClients = await db
+    .select({ id: clients.id, name: clients.name })
+    .from(clients)
+    .where(and(eq(clients.worklogId, worklogId), isNull(clients.deletedAt)))
+    .orderBy(asc(clients.name));
+
+  const clientIdsByProjectId = clientAssignments.reduce<Record<string, string[]>>(
     (accumulator, assignment) => {
       if (!assignment.projectId) {
         return accumulator;
       }
 
-      const currentNames = accumulator[assignment.projectId] ?? [];
+      const currentIds = accumulator[assignment.projectId] ?? [];
       accumulator[assignment.projectId] = [
-        ...currentNames,
-        assignment.clientName,
+        ...currentIds,
+        assignment.clientId,
       ];
-
       return accumulator;
     },
     {},
@@ -127,7 +132,7 @@ export default async function ProjectsPage({
     id: project.id,
     name: project.name,
     description: project.description ?? "",
-    clientsLabel: (clientsByProjectId[project.id] ?? []).join(", "),
+    clientIds: clientIdsByProjectId[project.id] ?? [],
     status: project.status,
     createdAtLabel: formatDate(project.createdAt),
     createdAtSortValue: project.createdAt?.getTime() ?? 0,
@@ -175,7 +180,7 @@ export default async function ProjectsPage({
           <Typography color="text.secondary">No projects yet.</Typography>
         </Paper>
       ) : (
-        <ProjectsTable rows={projectRows} />
+        <ProjectsTable rows={projectRows} availableClients={availableClients} />
       )}
 
       <Box sx={{ mt: 1.5 }}>

@@ -12,6 +12,7 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { TableFieldUpdateResult } from "@/app/components/editable-table-cell";
 import { type EditEntryFormState } from "./form-state";
 
 async function entryClientsTableExists(): Promise<boolean> {
@@ -49,6 +50,243 @@ async function ensureEntryClientsTable(): Promise<boolean> {
     return await entryClientsTableExists();
   } catch {
     return false;
+  }
+}
+
+export async function updateEntryField(
+  entryId: string,
+  field: "workDate" | "projectId" | "title" | "description" | "clientIds",
+  value: string | string[],
+): Promise<TableFieldUpdateResult> {
+  const worklogId = await requireWorklogId();
+  if (
+    field !== "workDate" &&
+    field !== "projectId" &&
+    field !== "title" &&
+    field !== "description" &&
+    field !== "clientIds"
+  ) {
+    return { success: false, message: "Invalid entry field." };
+  }
+
+  if (field === "clientIds") {
+    if (
+      !Array.isArray(value) ||
+      !value.every((clientId): clientId is string => typeof clientId === "string")
+    ) {
+      return { success: false, message: "Invalid client selection." };
+    }
+
+    const clientIds = [...new Set(value.map((id) => id.trim()).filter(Boolean))];
+    const [entry] = await db
+      .select({ projectId: dailyEntries.projectId })
+      .from(dailyEntries)
+      .where(
+        and(
+          eq(dailyEntries.id, entryId),
+          eq(dailyEntries.worklogId, worklogId),
+          isNull(dailyEntries.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!entry) {
+      return { success: false, message: "Entry is no longer available." };
+    }
+
+    const supportsEntryClients = await ensureEntryClientsTable();
+    if (!supportsEntryClients) {
+      return {
+        success: false,
+        message: "Client assignments are unavailable. Please try again later.",
+      };
+    }
+
+    const validClients = clientIds.length
+      ? await db
+          .select({ id: projectClients.clientId })
+          .from(projectClients)
+          .innerJoin(
+            clients,
+            and(
+              eq(projectClients.clientId, clients.id),
+              eq(clients.worklogId, worklogId),
+              isNull(clients.deletedAt),
+            ),
+          )
+          .where(
+            and(
+              eq(projectClients.projectId, entry.projectId),
+              inArray(projectClients.clientId, clientIds),
+            ),
+          )
+      : [];
+
+    if (validClients.length !== clientIds.length) {
+      return {
+        success: false,
+        message: "Selected clients must belong to the entry's project.",
+      };
+    }
+
+    try {
+      await db
+        .delete(entryClients)
+        .where(eq(entryClients.dailyEntryId, entryId));
+      if (clientIds.length > 0) {
+        await db.insert(entryClients).values(
+          clientIds.map((clientId) => ({
+            dailyEntryId: entryId,
+            clientId,
+          })),
+        );
+      }
+
+      revalidatePath("/entries");
+      return { success: true };
+    } catch {
+      return {
+        success: false,
+        message: "Could not save the entry clients. Please try again.",
+      };
+    }
+  }
+
+  if (typeof value !== "string") {
+    return { success: false, message: "Invalid field value." };
+  }
+
+  const normalizedValue = value.trim();
+  if ((field === "title" || field === "projectId" || field === "workDate") && !normalizedValue) {
+    return {
+      success: false,
+      message:
+        field === "title"
+          ? "Entry title is required."
+          : field === "workDate"
+            ? "Entry date is required."
+            : "Project is required.",
+    };
+  }
+
+  if (
+    field === "workDate" &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue) ||
+      Number.isNaN(new Date(`${normalizedValue}T00:00:00.000Z`).getTime()) ||
+      new Date(`${normalizedValue}T00:00:00.000Z`)
+        .toISOString()
+        .slice(0, 10) !== normalizedValue)
+  ) {
+    return { success: false, message: "Enter a valid date." };
+  }
+
+  if (field === "projectId") {
+    const [project] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, normalizedValue),
+          eq(projects.worklogId, worklogId),
+          isNull(projects.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!project) {
+      return { success: false, message: "Selected project is unavailable." };
+    }
+  }
+
+  let retainedClientIds: string[] | undefined;
+  if (field === "projectId" && (await entryClientsTableExists())) {
+    const [entry] = await db
+      .select({ projectId: dailyEntries.projectId })
+      .from(dailyEntries)
+      .where(
+        and(
+          eq(dailyEntries.id, entryId),
+          eq(dailyEntries.worklogId, worklogId),
+          isNull(dailyEntries.deletedAt),
+        ),
+      )
+      .limit(1);
+
+    if (!entry) {
+      return { success: false, message: "Entry is no longer available." };
+    }
+
+    const assignedClients = await db
+      .select({ clientId: entryClients.clientId })
+      .from(entryClients)
+      .where(eq(entryClients.dailyEntryId, entryId));
+    const assignedClientIds = assignedClients.map((client) => client.clientId);
+    const validClients = assignedClientIds.length
+      ? await db
+          .select({ clientId: projectClients.clientId })
+          .from(projectClients)
+          .innerJoin(
+            clients,
+            and(
+              eq(projectClients.clientId, clients.id),
+              eq(clients.worklogId, worklogId),
+              isNull(clients.deletedAt),
+            ),
+          )
+          .where(
+            and(
+              eq(projectClients.projectId, normalizedValue),
+              inArray(projectClients.clientId, assignedClientIds),
+            ),
+          )
+      : [];
+    retainedClientIds = validClients.map((client) => client.clientId);
+  }
+
+  try {
+    const [updatedEntry] = await db
+      .update(dailyEntries)
+      .set(
+        field === "title"
+          ? { title: normalizedValue }
+          : field === "description"
+            ? { description: normalizedValue || null }
+            : field === "workDate"
+              ? { workDate: normalizedValue }
+              : { projectId: normalizedValue },
+      )
+      .where(
+        and(
+          eq(dailyEntries.id, entryId),
+          eq(dailyEntries.worklogId, worklogId),
+          isNull(dailyEntries.deletedAt),
+        ),
+      )
+      .returning({ id: dailyEntries.id });
+
+    if (!updatedEntry) {
+      return { success: false, message: "Entry is no longer available." };
+    }
+
+    if (retainedClientIds !== undefined) {
+      await db
+        .delete(entryClients)
+        .where(eq(entryClients.dailyEntryId, entryId));
+      if (retainedClientIds.length > 0) {
+        await db.insert(entryClients).values(
+          retainedClientIds.map((clientId) => ({
+            dailyEntryId: entryId,
+            clientId,
+          })),
+        );
+      }
+    }
+
+    revalidatePath("/entries");
+    revalidatePath("/projects");
+    return { success: true };
+  } catch {
+    return { success: false, message: "Could not save the entry. Please try again." };
   }
 }
 

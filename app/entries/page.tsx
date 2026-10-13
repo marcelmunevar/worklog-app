@@ -3,6 +3,7 @@ import { getDateFilterState } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
 import { deleteEntry } from "./[id]/edit/actions";
 import EntriesTable from "./entries-table";
+import { getEntryProjectOptions } from "./entry-form-data";
 import ShowDeletedToggle from "./show-deleted-toggle";
 import { db } from "@/db";
 import { clients, dailyEntries, entryClients, projects } from "@/db/schema";
@@ -62,6 +63,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     ? await db
         .select({
           id: dailyEntries.id,
+          projectId: dailyEntries.projectId,
           title: dailyEntries.title,
           description: dailyEntries.description,
           workDate: dailyEntries.workDate,
@@ -71,6 +73,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           projectDeletedAt: projects.deletedAt,
           clientName: clients.name,
           clientAcronym: clients.acronym,
+          clientId: clients.id,
         })
         .from(dailyEntries)
         .innerJoin(
@@ -97,6 +100,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     : await db
         .select({
           id: dailyEntries.id,
+          projectId: dailyEntries.projectId,
           title: dailyEntries.title,
           description: dailyEntries.description,
           workDate: dailyEntries.workDate,
@@ -106,6 +110,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           projectDeletedAt: projects.deletedAt,
           clientName: sql<string | null>`NULL`,
           clientAcronym: sql<string | null>`NULL`,
+          clientId: sql<string | null>`NULL`,
         })
         .from(dailyEntries)
         .innerJoin(
@@ -122,6 +127,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     string,
     {
       id: string;
+      projectId: string;
       workDate: string;
       projectName: string;
       title: string;
@@ -133,6 +139,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       deleteAction?: () => Promise<void>;
       clientNames: string[];
       clientAcronyms: string[];
+      clientIds: string[];
     }
   >();
 
@@ -156,11 +163,16 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
         existingEntry.clientsAcronym = existingEntry.clientAcronyms.join(", ");
       }
 
+      if (entry.clientId && !existingEntry.clientIds.includes(entry.clientId)) {
+        existingEntry.clientIds.push(entry.clientId);
+      }
+
       continue;
     }
 
     entryMap.set(entry.id, {
       id: entry.id,
+      projectId: entry.projectId,
       workDate: entry.workDate,
       projectName: entry.projectName,
       title: entry.title,
@@ -169,6 +181,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       clientsAcronym: entry.clientAcronym ?? "",
       clientNames: entry.clientName ? [entry.clientName] : [],
       clientAcronyms: entry.clientAcronym ? [entry.clientAcronym] : [],
+      clientIds: entry.clientId ? [entry.clientId] : [],
       isDeleted: entry.deletedAt !== null,
       isProjectDeleted: entry.projectDeletedAt !== null,
       deleteAction: entry.deletedAt
@@ -185,6 +198,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
         clientAcronyms.length > 0 ? clientAcronyms.join(", ") : "",
     }),
   );
+  const projectOptions = await getEntryProjectOptions();
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -233,7 +247,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           <Typography color="text.secondary">No entries yet.</Typography>
         </Paper>
       ) : (
-        <EntriesTable rows={entryRows} />
+        <EntriesTable rows={entryRows} projects={projectOptions} />
       )}
 
       <Box sx={{ mt: 1.5 }}>
