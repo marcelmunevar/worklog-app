@@ -30,6 +30,7 @@ import {
   isNotNull,
   isNull,
   lte,
+  ne,
   sql,
 } from "drizzle-orm";
 
@@ -56,8 +57,15 @@ export default async function ProjectsPage({
   const resolvedSearchParams = await searchParams;
   const dateFilter = getDateFilterState(resolvedSearchParams);
   const showDeleted = resolvedSearchParams.showDeleted === "true";
+  const showCompleted = resolvedSearchParams.showCompleted === "true";
+  const statusFilter = showDeleted
+    ? undefined
+    : showCompleted
+      ? eq(projects.status, "completed")
+      : ne(projects.status, "completed");
   const whereClause = and(
     eq(projects.worklogId, worklogId),
+    statusFilter,
     dateFilter.isActive
       ? (() => {
           const { from, to } = toInclusiveTimestampBounds(
@@ -214,19 +222,30 @@ export default async function ProjectsPage({
       {projectList.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Typography color="text.secondary">
-            {showDeleted ? "Trash is empty." : "No projects yet."}
+            {showDeleted
+              ? "Trash is empty."
+              : showCompleted
+                ? "No completed projects."
+                : "No projects yet."}
           </Typography>
         </Paper>
       ) : (
         <ProjectsTable rows={projectRows} availableClients={availableClients} />
       )}
 
-      <Box sx={{ mt: 1.5 }}>
+      <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+        <ShowDeletedToggle
+          checked={showCompleted}
+          label="Show completed projects"
+          param="showCompleted"
+          clearParams={["showDeleted"]}
+        />
         <ShowDeletedToggle
           checked={showDeleted}
           label="Show project trash"
+          clearParams={["showCompleted"]}
         />
-      </Box>
+      </Stack>
     </Container>
   );
 }

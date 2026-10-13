@@ -1,31 +1,33 @@
 "use client";
 
-import { Checkbox, FormControlLabel } from "@mui/material";
+import { ToggleButton } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type ShowDeletedToggleProps = {
   checked: boolean;
   label?: string;
+  param?: string;
+  clearParams?: string[];
 };
 
 export default function ShowDeletedToggle({
   checked,
   label = "Show trash",
+  param = "showDeleted",
+  clearParams = [],
 }: ShowDeletedToggleProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const handleChange = (
-    _event: React.ChangeEvent<HTMLInputElement>,
-    value: boolean,
-  ) => {
+  const handleChange = () => {
     const nextParams = new URLSearchParams(searchParams.toString());
 
-    if (value) {
-      nextParams.set("showDeleted", "true");
+    if (!checked) {
+      nextParams.set(param, "true");
+      clearParams.forEach((name) => nextParams.delete(name));
     } else {
-      nextParams.delete("showDeleted");
+      nextParams.delete(param);
     }
 
     const nextQuery = nextParams.toString();
@@ -33,9 +35,13 @@ export default function ShowDeletedToggle({
   };
 
   return (
-    <FormControlLabel
-      control={<Checkbox checked={checked} onChange={handleChange} />}
-      label={label}
-    />
+    <ToggleButton
+      onChange={handleChange}
+      selected={checked}
+      size="small"
+      value={param}
+    >
+      {label}
+    </ToggleButton>
   );
 }
