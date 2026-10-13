@@ -3,6 +3,7 @@
 import EditableTableCell from "@/app/components/editable-table-cell";
 import TableRowAction from "@/app/components/table-row-action";
 import { updateProjectField } from "@/app/projects/[id]/edit/actions";
+import { PROJECT_STATUS_OPTIONS } from "@/app/projects/project-status";
 import {
   Chip,
   Paper,
@@ -169,6 +170,8 @@ export default function ProjectsTable({
               </TableCell>
               <TableCell>
                 <EditableTableCell
+                  type="select"
+                  options={PROJECT_STATUS_OPTIONS}
                   value={project.status}
                   disabled={project.isDeleted}
                   onSave={(value) =>

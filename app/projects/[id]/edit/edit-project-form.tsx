@@ -5,6 +5,10 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import ModalCloseButton from "./modal-close-button";
 import {
+  isProjectStatus,
+  PROJECT_STATUS_OPTIONS,
+} from "@/app/projects/project-status";
+import {
   initialEditProjectFormState,
   type EditProjectFormState,
 } from "./form-state";
@@ -76,10 +80,19 @@ export default function EditProjectForm({
           id="status"
           name="status"
           label="Status"
-          type="text"
+          select
           defaultValue={project.status}
           required
-        />
+        >
+          {!isProjectStatus(project.status) ? (
+            <MenuItem value={project.status}>{project.status}</MenuItem>
+          ) : null}
+          {PROJECT_STATUS_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <TextField
           id="description"

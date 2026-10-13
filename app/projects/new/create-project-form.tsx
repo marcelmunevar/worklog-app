@@ -5,6 +5,9 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import ModalCloseButton from "@/app/components/modal-close-button";
 import {
+  PROJECT_STATUS_OPTIONS,
+} from "@/app/projects/project-status";
+import {
   initialCreateProjectFormState,
   type CreateProjectFormState,
 } from "./form-state";
@@ -57,10 +60,16 @@ export default function CreateProjectForm({
           id="status"
           name="status"
           label="Status"
-          type="text"
+          select
           defaultValue="active"
           required
-        />
+        >
+          {PROJECT_STATUS_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </TextField>
 
         <TextField
           id="description"

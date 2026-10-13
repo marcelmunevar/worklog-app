@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { TableFieldUpdateResult } from "@/app/components/editable-table-cell";
 import { type EditProjectFormState } from "./form-state";
+import { isProjectStatus } from "@/app/projects/project-status";
 
 function parseClientIds(formData: FormData): string[] {
   const parsed = formData
@@ -108,6 +109,10 @@ export async function updateProjectField(
       success: false,
       message: field === "name" ? "Project name is required." : "Status is required.",
     };
+  }
+
+  if (field === "status" && !isProjectStatus(normalizedValue)) {
+    return { success: false, message: "Select a valid status." };
   }
 
   try {
