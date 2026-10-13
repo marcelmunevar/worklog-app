@@ -21,7 +21,7 @@ import { Fragment, useMemo, useState } from "react";
 
 type EntryRow = {
   id: string;
-  projectId: string;
+  projectId: string | null;
   workDate: string;
   projectName: string;
   title: string;
@@ -206,12 +206,15 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                   <TableCell sx={{ fontWeight: 500 }}>
                     <EditableTableCell
                       type="select"
-                      value={entry.projectId}
-                      emptyLabel={entry.projectName}
-                      options={projects.map((project) => ({
-                        value: project.id,
-                        label: project.name,
-                      }))}
+                      value={entry.projectId ?? ""}
+                      emptyLabel="No project"
+                      options={[
+                        { value: "", label: "No project" },
+                        ...projects.map((project) => ({
+                          value: project.id,
+                          label: project.name,
+                        })),
+                      ]}
                       disabled={entry.isDeleted || entry.isProjectDeleted}
                       onSave={(value) =>
                         updateEntryField(

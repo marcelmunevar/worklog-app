@@ -48,7 +48,10 @@ export default async function EditEntryModalPage({
     getEntryAssignedClientIds(id),
   ]);
 
-  if (!allProjects.some((project) => project.id === entry.projectId)) {
+  if (
+    entry.projectId &&
+    !allProjects.some((project) => project.id === entry.projectId)
+  ) {
     notFound();
   }
 

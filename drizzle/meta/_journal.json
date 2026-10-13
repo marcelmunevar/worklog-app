@@ -50,6 +50,13 @@
       "when": 1791309775463,
       "tag": "0006_spooky_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791919737903,
+      "tag": "0007_allow_incomplete_entries",
+      "breakpoints": true
     }
   ]
 }

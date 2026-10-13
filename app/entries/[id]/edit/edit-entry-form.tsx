@@ -21,9 +21,9 @@ import {
 } from "./form-state";
 
 type EntryData = {
-  projectId: string;
+  projectId: string | null;
   clientIds: string[];
-  title: string;
+  title: string | null;
   workDate: string;
   description: string | null;
 };
@@ -60,7 +60,9 @@ export default function EditEntryForm({
   cancelLabel = "Cancel",
   cancelMode = "link",
 }: EditEntryFormProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState(entry.projectId);
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    entry.projectId ?? "",
+  );
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>(
     entry.clientIds,
   );
@@ -122,6 +124,7 @@ export default function EditEntryForm({
           onChange={handleProjectChange}
           fullWidth
         >
+          <MenuItem value="">No project</MenuItem>
           {projects.map((project) => (
             <MenuItem key={project.id} value={project.id}>
               {project.name}
@@ -142,7 +145,7 @@ export default function EditEntryForm({
           onChange={handleClientChange}
           multiple
           fullWidth
-          disabled={availableClients.length === 0}
+          disabled={!selectedProjectId || availableClients.length === 0}
           renderValue={(selected) =>
             availableClients
               .filter((client) => selected.includes(client.id))
@@ -162,8 +165,7 @@ export default function EditEntryForm({
           name="title"
           label="Title"
           type="text"
-          defaultValue={entry.title}
-          required
+          defaultValue={entry.title ?? ""}
         />
 
         <TextField

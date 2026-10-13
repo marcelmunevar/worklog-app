@@ -61,6 +61,41 @@ function parseClientIds(formData: FormData): string[] {
   return [...new Set(parsed)];
 }
 
+export async function createBlankEntry(
+  workDate: string,
+): Promise<{ success: true } | { success: false; message: string }> {
+  const worklogId = await requireWorklogId();
+
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(workDate) ||
+    Number.isNaN(new Date(`${workDate}T00:00:00.000Z`).getTime()) ||
+    new Date(`${workDate}T00:00:00.000Z`).toISOString().slice(0, 10) !== workDate
+  ) {
+    return {
+      success: false,
+      message: "Could not add an entry with today's date.",
+    };
+  }
+
+  try {
+    await db.insert(dailyEntries).values({
+      worklogId,
+      workDate,
+      projectId: null,
+      title: null,
+    });
+
+    revalidatePath("/entries");
+    revalidatePath("/projects");
+    return { success: true };
+  } catch {
+    return {
+      success: false,
+      message: "Could not add the entry. Please try again.",
+    };
+  }
+}
+
 export async function createEntry(
   _prevState: CreateEntryFormState,
   formData: FormData,

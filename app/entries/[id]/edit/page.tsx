@@ -46,7 +46,10 @@ export default async function EditEntryPage({ params }: EditEntryPageProps) {
     getEntryAssignedClientIds(id),
   ]);
 
-  if (!allProjects.some((project) => project.id === entry.projectId)) {
+  if (
+    entry.projectId &&
+    !allProjects.some((project) => project.id === entry.projectId)
+  ) {
     notFound();
   }
 

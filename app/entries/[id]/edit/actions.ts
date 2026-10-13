@@ -102,25 +102,33 @@ export async function updateEntryField(
       };
     }
 
-    const validClients = clientIds.length
-      ? await db
-          .select({ id: projectClients.clientId })
-          .from(projectClients)
-          .innerJoin(
-            clients,
-            and(
-              eq(projectClients.clientId, clients.id),
-              eq(clients.worklogId, worklogId),
-              isNull(clients.deletedAt),
-            ),
+    let validClients: Array<{ id: string }> = [];
+    if (clientIds.length > 0) {
+      if (!entry.projectId) {
+        return {
+          success: false,
+          message: "Choose a project before assigning clients.",
+        };
+      }
+
+      validClients = await db
+        .select({ id: projectClients.clientId })
+        .from(projectClients)
+        .innerJoin(
+          clients,
+          and(
+            eq(projectClients.clientId, clients.id),
+            eq(clients.worklogId, worklogId),
+            isNull(clients.deletedAt),
           )
-          .where(
-            and(
-              eq(projectClients.projectId, entry.projectId),
-              inArray(projectClients.clientId, clientIds),
-            ),
-          )
-      : [];
+        )
+        .where(
+          and(
+            eq(projectClients.projectId, entry.projectId),
+            inArray(projectClients.clientId, clientIds),
+          ),
+        );
+    }
 
     if (validClients.length !== clientIds.length) {
       return {
@@ -157,15 +165,10 @@ export async function updateEntryField(
   }
 
   const normalizedValue = value.trim();
-  if ((field === "title" || field === "projectId" || field === "workDate") && !normalizedValue) {
+  if (field === "workDate" && !normalizedValue) {
     return {
       success: false,
-      message:
-        field === "title"
-          ? "Entry title is required."
-          : field === "workDate"
-            ? "Entry date is required."
-            : "Project is required.",
+      message: "Entry date is required.",
     };
   }
 
@@ -180,7 +183,7 @@ export async function updateEntryField(
     return { success: false, message: "Enter a valid date." };
   }
 
-  if (field === "projectId") {
+  if (field === "projectId" && normalizedValue) {
     const [project] = await db
       .select({ id: projects.id })
       .from(projects)
@@ -199,7 +202,13 @@ export async function updateEntryField(
   }
 
   let retainedClientIds: string[] | undefined;
-  if (field === "projectId" && (await entryClientsTableExists())) {
+  if (
+    field === "projectId" &&
+    !normalizedValue &&
+    (await entryClientsTableExists())
+  ) {
+    retainedClientIds = [];
+  } else if (field === "projectId" && (await entryClientsTableExists())) {
     const [entry] = await db
       .select({ projectId: dailyEntries.projectId })
       .from(dailyEntries)
@@ -248,12 +257,12 @@ export async function updateEntryField(
       .update(dailyEntries)
       .set(
         field === "title"
-          ? { title: normalizedValue }
+          ? { title: normalizedValue || null }
           : field === "description"
             ? { description: normalizedValue || null }
             : field === "workDate"
               ? { workDate: normalizedValue }
-              : { projectId: normalizedValue },
+              : { projectId: normalizedValue || null },
       )
       .where(
         and(
@@ -312,29 +321,36 @@ export async function updateEntry(
   const workDate = String(formData.get("workDate") ?? "").trim();
   const clientIds = parseClientIds(formData);
 
-  if (!projectId || !title || !workDate) {
+  if (!workDate) {
     return {
       status: "error",
-      message: "Project, title, and date are required.",
+      message: "Entry date is required.",
     };
   }
 
-  const [project] = await db
-    .select({ id: projects.id })
-    .from(projects)
-    .where(
-      and(
-        eq(projects.id, projectId),
-        eq(projects.worklogId, worklogId),
-        isNull(projects.deletedAt),
-      ),
-    )
-    .limit(1);
+  if (projectId) {
+    const [project] = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(
+        and(
+          eq(projects.id, projectId),
+          eq(projects.worklogId, worklogId),
+          isNull(projects.deletedAt),
+        ),
+      )
+      .limit(1);
 
-  if (!project) {
+    if (!project) {
+      return {
+        status: "error",
+        message: "Selected project is no longer available.",
+      };
+    }
+  } else if (clientIds.length > 0) {
     return {
       status: "error",
-      message: "Selected project is no longer available.",
+      message: "Choose a project before assigning clients.",
     };
   }
 
@@ -368,8 +384,8 @@ export async function updateEntry(
     const [updatedEntry] = await db
       .update(dailyEntries)
       .set({
-        projectId,
-        title,
+        projectId: projectId || null,
+        title: title || null,
         description: description || null,
         workDate,
       })

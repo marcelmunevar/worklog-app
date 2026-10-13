@@ -1,6 +1,6 @@
 import DateRangeFilter from "@/app/components/date-range-filter";
 import { getDateFilterState } from "@/app/components/date-filter-utils";
-import NavButton from "@/app/components/nav-button";
+import AddEntryButton from "./add-entry-button";
 import { deleteEntry } from "./[id]/edit/actions";
 import EntriesTable from "./entries-table";
 import { getEntryProjectOptions } from "./entry-form-data";
@@ -76,7 +76,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           clientId: clients.id,
         })
         .from(dailyEntries)
-        .innerJoin(
+        .leftJoin(
           projects,
           and(
             eq(dailyEntries.projectId, projects.id),
@@ -113,7 +113,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           clientId: sql<string | null>`NULL`,
         })
         .from(dailyEntries)
-        .innerJoin(
+        .leftJoin(
           projects,
           and(
             eq(dailyEntries.projectId, projects.id),
@@ -127,7 +127,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     string,
     {
       id: string;
-      projectId: string;
+      projectId: string | null;
       workDate: string;
       projectName: string;
       title: string;
@@ -174,8 +174,8 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       id: entry.id,
       projectId: entry.projectId,
       workDate: entry.workDate,
-      projectName: entry.projectName,
-      title: entry.title,
+      projectName: entry.projectName ?? "",
+      title: entry.title ?? "",
       description: entry.description ?? "",
       clientsLabel: entry.clientName ?? "",
       clientsAcronym: entry.clientAcronym ?? "",
@@ -218,9 +218,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
             mt: 1.5,
           }}
         >
-          <NavButton href="/entries/new" variant="contained">
-            Add entry
-          </NavButton>
+          <AddEntryButton />
 
           <Box
             sx={{

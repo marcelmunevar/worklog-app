@@ -171,11 +171,9 @@ export const dailyEntries = pgTable("daily_entries", {
     .notNull()
     .references(() => worklogs.id),
 
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => projects.id),
+  projectId: uuid("project_id").references(() => projects.id),
 
-  title: text("title").notNull(),
+  title: text("title"),
 
   description: text("description"),
 
