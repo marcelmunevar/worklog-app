@@ -8,7 +8,7 @@ A work tracking app for recording daily work against projects and clients. It is
 - Record daily entries with a work date, project, title, description, and optional client associations.
 - Filter entries by date range.
 - Move entries, projects, and clients to trash, with controls to restore or permanently delete entries.
-- Sign in with GitHub.
+- Sign in with GitHub. Google authentication is not currently enabled on the sign-in page.
 
 ## Requirements
 
@@ -25,7 +25,7 @@ Install dependencies:
 pnpm install
 ```
 
-Create `.env.local` in the project root:
+Create `.env.local` in the project root. These values are required:
 
 ```dotenv
 DATABASE_URL="postgresql://..."
@@ -34,7 +34,9 @@ AUTH_GITHUB_ID="your-github-oauth-client-id"
 AUTH_GITHUB_SECRET="your-github-oauth-client-secret"
 ```
 
-Set the GitHub OAuth application's callback URL to `http://localhost:3000/api/auth/callback/github` for local development. Generate an Auth.js secret with `pnpm exec auth secret` or another secure random value. Keep `.env.local` out of source control.
+`DATABASE_URL` is the PostgreSQL connection URL for your Neon database. `AUTH_SECRET` is used by Auth.js to sign and encrypt authentication data; generate one with `pnpm exec auth secret` or another secure random value. The GitHub ID and secret come from a GitHub OAuth application. Set its authorization callback URL to `http://localhost:3000/api/auth/callback/github` for local development, and use the corresponding `/api/auth/callback/github` URL on your deployed domain.
+
+Keep `.env.local` out of source control. The Next.js app reads environment variables from `.env.local`; the Drizzle migration tools and worklog backfill script also read `DATABASE_URL` from `.env.local` or `.env` when it is not set in the process environment.
 
 For an existing database, before applying the next migration, set
 `LEGACY_WORKLOG_OWNER_ID` to the `users.id` of the account that should own
@@ -64,13 +66,21 @@ Open [http://localhost:3000](http://localhost:3000). The home route redirects to
 
 ## Scripts
 
+Generate a migration after changing the Drizzle schema by providing a descriptive name:
+
+```bash
+pnpm db:generate -- --name add_entry_notes
+```
+
+Review the generated SQL migration, then apply it to the configured database with `pnpm db:migrate`.
+
 | Command                    | Description                                                |
 | -------------------------- | ---------------------------------------------------------- |
 | `pnpm dev`                 | Start the local development server.                        |
 | `pnpm build`               | Create a production build.                                 |
 | `pnpm start`               | Serve the production build.                                |
 | `pnpm lint`                | Run ESLint.                                                |
-| `pnpm db:generate`         | Generate a Drizzle migration from schema changes.          |
+| `pnpm db:generate`         | Generate a named Drizzle migration from schema changes.    |
 | `pnpm db:migrate`          | Apply pending Drizzle migrations.                          |
 | `pnpm db:backfill-worklog` | Assign existing unowned records to the configured account. |
 
