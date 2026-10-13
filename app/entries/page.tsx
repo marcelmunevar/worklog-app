@@ -68,6 +68,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           projectId: dailyEntries.projectId,
           title: dailyEntries.title,
           description: dailyEntries.description,
+          notes: dailyEntries.notes,
           workDate: dailyEntries.workDate,
           projectName: projects.name,
           createdAt: dailyEntries.createdAt,
@@ -105,6 +106,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
           projectId: dailyEntries.projectId,
           title: dailyEntries.title,
           description: dailyEntries.description,
+          notes: dailyEntries.notes,
           workDate: dailyEntries.workDate,
           projectName: projects.name,
           createdAt: dailyEntries.createdAt,
@@ -134,6 +136,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       projectName: string;
       title: string;
       description: string;
+      notes: string;
       clientsLabel: string;
       clientsAcronym: string;
       isDeleted: boolean;
@@ -179,6 +182,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
       projectName: entry.projectName ?? "",
       title: entry.title ?? "",
       description: entry.description ?? "",
+      notes: entry.notes ?? "",
       clientsLabel: entry.clientName ?? "",
       clientsAcronym: entry.clientAcronym ?? "",
       clientNames: entry.clientName ? [entry.clientName] : [],

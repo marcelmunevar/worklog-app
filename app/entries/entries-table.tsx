@@ -6,6 +6,7 @@ import {
   restoreEntry,
   updateEntryField,
 } from "@/app/entries/[id]/edit/actions";
+import EntryNotesButton from "@/app/entries/entry-notes-button";
 import TableRowAction from "@/app/components/table-row-action";
 import type { EntryProjectOption } from "@/app/entries/entry-form-data";
 import {
@@ -29,6 +30,7 @@ type EntryRow = {
   projectName: string;
   title: string;
   description: string;
+  notes: string;
   clientsLabel: string;
   clientsAcronym: string;
   clientIds: string[];
@@ -329,11 +331,17 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                         />
                       </Stack>
                     ) : entry.deleteAction ? (
-                      <TableRowAction
-                        action={entry.deleteAction}
-                        entity="entry"
-                        type="delete"
-                      />
+                      <Stack direction="row" spacing={0.5}>
+                        <EntryNotesButton
+                          entryId={entry.id}
+                          notes={entry.notes}
+                        />
+                        <TableRowAction
+                          action={entry.deleteAction}
+                          entity="entry"
+                          type="delete"
+                        />
+                      </Stack>
                     ) : (
                       "-"
                     )}

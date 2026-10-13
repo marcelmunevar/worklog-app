@@ -55,7 +55,13 @@ async function ensureEntryClientsTable(): Promise<boolean> {
 
 export async function updateEntryField(
   entryId: string,
-  field: "workDate" | "projectId" | "title" | "description" | "clientIds",
+  field:
+    | "workDate"
+    | "projectId"
+    | "title"
+    | "description"
+    | "notes"
+    | "clientIds",
   value: string | string[],
 ): Promise<TableFieldUpdateResult> {
   const worklogId = await requireWorklogId();
@@ -64,6 +70,7 @@ export async function updateEntryField(
     field !== "projectId" &&
     field !== "title" &&
     field !== "description" &&
+    field !== "notes" &&
     field !== "clientIds"
   ) {
     return { success: false, message: "Invalid entry field." };
@@ -232,9 +239,11 @@ export async function updateEntryField(
           ? { title: normalizedValue || null }
           : field === "description"
             ? { description: normalizedValue || null }
-            : field === "workDate"
-              ? { workDate: normalizedValue }
-              : { projectId: normalizedValue || null },
+            : field === "notes"
+              ? { notes: normalizedValue || null }
+              : field === "workDate"
+                ? { workDate: normalizedValue }
+                : { projectId: normalizedValue || null },
       )
       .where(
         and(

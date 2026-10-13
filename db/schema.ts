@@ -177,6 +177,8 @@ export const dailyEntries = pgTable("daily_entries", {
 
   description: text("description"),
 
+  notes: text("notes"),
+
   workDate: date("work_date").notNull(),
 
   createdAt: timestamp("created_at").defaultNow(),

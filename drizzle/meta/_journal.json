@@ -57,6 +57,13 @@
       "when": 1791919737903,
       "tag": "0007_allow_incomplete_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791922479213,
+      "tag": "0008_add_entry_notes",
+      "breakpoints": true
     }
   ]
 }
