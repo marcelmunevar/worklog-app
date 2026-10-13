@@ -160,12 +160,8 @@ export default function EditableTableCell({
       size="small"
       type={type === "date" ? "date" : "text"}
       select={type === "select" || isMultiple}
-      multiline={type === "text" && typeof value === "string" && value.length > 40}
-      minRows={
-        type === "text" && typeof value === "string" && value.length > 40
-          ? 2
-          : undefined
-      }
+      multiline={type === "text"}
+      minRows={type === "text" ? 1 : undefined}
       value={draft}
       onChange={(event) => {
         if (isMultiple) {

@@ -82,7 +82,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   }));
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" component="h1">
           Clients

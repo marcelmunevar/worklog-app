@@ -68,6 +68,9 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>("workDate");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
+  const showFlags = rows.some((row) => row.isDeleted);
+
+
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
       const direction = sortOrder === "asc" ? 1 : -1;
@@ -161,7 +164,7 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                 Clients
               </TableSortLabel>
             </TableCell>
-            <TableCell>Flags</TableCell>
+            {showFlags ? <TableCell>Flags</TableCell> : null}
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -174,7 +177,7 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                 }}
               >
                 <TableCell
-                  colSpan={7}
+                  colSpan={showFlags ? 7 : 6}
                   sx={{
                     fontWeight: 600,
                   }}
@@ -287,6 +290,7 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                       }
                     />
                   </TableCell>
+                  {showFlags ? (
                   <TableCell>
                     {entry.isDeleted || entry.isProjectDeleted ? (
                       <Stack direction="row" spacing={1}>
@@ -306,6 +310,7 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                       "-"
                     )}
                   </TableCell>
+                  ) : null}
                   <TableCell>
                     {entry.isDeleted ? (
                       <Stack direction="row" spacing={0.5}>

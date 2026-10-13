@@ -33,7 +33,7 @@ export default function RootLayout({
             elevation={0}
             sx={{ borderBottom: 1, borderColor: "divider" }}
           >
-            <Container maxWidth="lg">
+            <Container maxWidth="xl">
               <Toolbar disableGutters>
                 <MainNav />
               </Toolbar>

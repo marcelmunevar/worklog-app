@@ -203,7 +203,7 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
   const projectOptions = await getEntryProjectOptions();
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4">Daily Entries</Typography>
 

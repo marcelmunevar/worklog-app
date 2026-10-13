@@ -61,6 +61,9 @@ export default function ProjectsTable({
     useState<SortColumn>("createdAtSortValue");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
+  const showFlags = rows.some((row) => row.isDeleted);
+
+
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
       const direction = sortOrder === "asc" ? 1 : -1;
@@ -145,7 +148,7 @@ export default function ProjectsTable({
                 Entries
               </TableSortLabel>
             </TableCell>
-            <TableCell>Flags</TableCell>
+            {showFlags ? <TableCell>Flags</TableCell> : null}
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -208,13 +211,15 @@ export default function ProjectsTable({
               <TableCell sx={{ fontWeight: 600 }}>
                 {project.entryCount}
               </TableCell>
-              <TableCell>
-                {project.isDeleted ? (
-                  <Chip color="default" label="In trash" size="small" />
-                ) : (
-                  "-"
-                )}
-              </TableCell>
+              {showFlags ? (
+                <TableCell>
+                  {project.isDeleted ? (
+                    <Chip color="default" label="In trash" size="small" />
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+              ) : null}
               <TableCell>
                 {project.isDeleted ? (
                   <Stack direction="row" spacing={0.5}>

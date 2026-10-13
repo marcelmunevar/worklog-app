@@ -50,6 +50,9 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
     useState<SortColumn>("createdAtSortValue");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
+  const showFlags = rows.some((row) => row.isDeleted);
+
+
   const sortedRows = useMemo(() => {
     return [...rows].sort((a, b) => {
       const direction = sortOrder === "asc" ? 1 : -1;
@@ -122,7 +125,7 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
                 Projects
               </TableSortLabel>
             </TableCell>
-            <TableCell>Flags</TableCell>
+            {showFlags ? <TableCell>Flags</TableCell> : null}
             <TableCell>Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -154,13 +157,15 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
               <TableCell sx={{ fontWeight: 600 }}>
                 {client.projectCount}
               </TableCell>
-              <TableCell>
-                {client.isDeleted ? (
-                  <Chip color="default" label="In trash" size="small" />
-                ) : (
-                  "-"
-                )}
-              </TableCell>
+              {showFlags ? (
+                <TableCell>
+                  {client.isDeleted ? (
+                    <Chip color="default" label="In trash" size="small" />
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+              ) : null}
               <TableCell>
                 {client.isDeleted ? (
                   <Stack direction="row" spacing={0.5}>
