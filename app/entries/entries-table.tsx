@@ -1,11 +1,14 @@
 "use client";
 
 import EditableTableCell from "@/app/components/editable-table-cell";
-import { updateEntryField } from "@/app/entries/[id]/edit/actions";
+import {
+  permanentlyDeleteEntry,
+  restoreEntry,
+  updateEntryField,
+} from "@/app/entries/[id]/edit/actions";
+import TableRowAction from "@/app/components/table-row-action";
 import type { EntryProjectOption } from "@/app/entries/entry-form-data";
 import {
-  Box,
-  Button,
   Chip,
   Paper,
   Stack,
@@ -288,12 +291,12 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                     {entry.isDeleted || entry.isProjectDeleted ? (
                       <Stack direction="row" spacing={1}>
                         {entry.isDeleted ? (
-                          <Chip color="default" label="Deleted" size="small" />
+                          <Chip color="default" label="In trash" size="small" />
                         ) : null}
                         {entry.isProjectDeleted ? (
                           <Chip
                             color="default"
-                            label="Project deleted"
+                            label="Project in trash"
                             size="small"
                             variant="outlined"
                           />
@@ -305,37 +308,29 @@ export default function EntriesTable({ rows, projects }: EntriesTableProps) {
                   </TableCell>
                   <TableCell>
                     {entry.isDeleted ? (
-                      "-"
-                    ) : entry.isProjectDeleted ? (
-                      <Stack direction="row" spacing={1}>
-                        {entry.deleteAction ? (
-                          <Box component="form" action={entry.deleteAction}>
-                            <Button
-                              color="error"
-                              size="small"
-                              type="submit"
-                              variant="outlined"
-                            >
-                              Delete
-                            </Button>
-                          </Box>
-                        ) : null}
+                      <Stack direction="row" spacing={0.5}>
+                        <TableRowAction
+                          action={restoreEntry.bind(null, entry.id)}
+                          entity="entry"
+                          type="restore"
+                        />
+                        <TableRowAction
+                          action={permanentlyDeleteEntry.bind(
+                            null,
+                            entry.id,
+                          )}
+                          entity="entry"
+                          type="deletePermanently"
+                        />
                       </Stack>
+                    ) : entry.deleteAction ? (
+                      <TableRowAction
+                        action={entry.deleteAction}
+                        entity="entry"
+                        type="delete"
+                      />
                     ) : (
-                      <Stack direction="row" spacing={1}>
-                        {entry.deleteAction ? (
-                          <Box component="form" action={entry.deleteAction}>
-                            <Button
-                              color="error"
-                              size="small"
-                              type="submit"
-                              variant="outlined"
-                            >
-                              Delete
-                            </Button>
-                          </Box>
-                        ) : null}
-                      </Stack>
+                      "-"
                     )}
                   </TableCell>
                 </TableRow>

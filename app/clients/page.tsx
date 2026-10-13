@@ -3,10 +3,14 @@ import { clients, projectClients, projects } from "@/db/schema";
 import { requireWorklogId } from "@/lib/worklog-access";
 import NavButton from "@/app/components/nav-button";
 import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
-import { deleteClient } from "./[id]/edit/actions";
+import {
+  deleteClient,
+  permanentlyDeleteClient,
+  restoreClient,
+} from "./[id]/edit/actions";
 import ClientsTable from "./clients-table";
 import { Box, Container, Paper, Typography } from "@mui/material";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 function formatDate(dateValue: Date | null) {
   if (!dateValue) {
@@ -50,7 +54,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     .where(
       and(
         eq(clients.worklogId, worklogId),
-        showDeleted ? undefined : isNull(clients.deletedAt),
+        showDeleted
+          ? isNotNull(clients.deletedAt)
+          : isNull(clients.deletedAt),
       ),
     )
     .groupBy(clients.id, clients.name, clients.acronym, clients.createdAt)
@@ -67,6 +73,12 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     deleteAction: client.deletedAt
       ? undefined
       : deleteClient.bind(null, client.id),
+    restoreAction: client.deletedAt
+      ? restoreClient.bind(null, client.id)
+      : undefined,
+    permanentlyDeleteAction: client.deletedAt
+      ? permanentlyDeleteClient.bind(null, client.id)
+      : undefined,
   }));
 
   return (
@@ -85,7 +97,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
       {clientList.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
-          <Typography color="text.secondary">No clients yet.</Typography>
+          <Typography color="text.secondary">
+            {showDeleted ? "Trash is empty." : "No clients yet."}
+          </Typography>
         </Paper>
       ) : (
         <ClientsTable rows={clientRows} />
@@ -94,7 +108,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       <Box sx={{ mt: 1.5 }}>
         <ShowDeletedToggle
           checked={showDeleted}
-          label="Show soft deleted clients"
+          label="Show client trash"
         />
       </Box>
     </Container>

@@ -1,10 +1,9 @@
 "use client";
 
 import EditableTableCell from "@/app/components/editable-table-cell";
+import TableRowAction from "@/app/components/table-row-action";
 import { updateClientField } from "@/app/clients/[id]/edit/actions";
 import {
-  Box,
-  Button,
   Chip,
   Paper,
   Stack,
@@ -27,6 +26,8 @@ type ClientRow = {
   projectCount: number;
   isDeleted: boolean;
   deleteAction?: () => Promise<void>;
+  restoreAction?: () => Promise<void>;
+  permanentlyDeleteAction?: () => Promise<void>;
 };
 
 type SortColumn = "name" | "acronym" | "createdAtSortValue" | "projectCount";
@@ -155,29 +156,37 @@ export default function ClientsTable({ rows }: ClientsTableProps) {
               </TableCell>
               <TableCell>
                 {client.isDeleted ? (
-                  <Chip color="default" label="Deleted" size="small" />
+                  <Chip color="default" label="In trash" size="small" />
                 ) : (
                   "-"
                 )}
               </TableCell>
               <TableCell>
                 {client.isDeleted ? (
-                  "-"
-                ) : (
-                  <Stack direction="row" spacing={1}>
-                    {client.deleteAction ? (
-                      <Box component="form" action={client.deleteAction}>
-                        <Button
-                          color="error"
-                          size="small"
-                          type="submit"
-                          variant="outlined"
-                        >
-                          Delete
-                        </Button>
-                      </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    {client.restoreAction ? (
+                      <TableRowAction
+                        action={client.restoreAction}
+                        entity="client"
+                        type="restore"
+                      />
+                    ) : null}
+                    {client.permanentlyDeleteAction ? (
+                      <TableRowAction
+                        action={client.permanentlyDeleteAction}
+                        entity="client"
+                        type="deletePermanently"
+                      />
                     ) : null}
                   </Stack>
+                ) : (
+                  client.deleteAction ? (
+                    <TableRowAction
+                      action={client.deleteAction}
+                      entity="client"
+                      type="delete"
+                    />
+                  ) : null
                 )}
               </TableCell>
             </TableRow>

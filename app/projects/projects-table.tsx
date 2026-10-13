@@ -1,10 +1,9 @@
 "use client";
 
 import EditableTableCell from "@/app/components/editable-table-cell";
+import TableRowAction from "@/app/components/table-row-action";
 import { updateProjectField } from "@/app/projects/[id]/edit/actions";
 import {
-  Box,
-  Button,
   Chip,
   Paper,
   Stack,
@@ -29,6 +28,8 @@ type ProjectRow = {
   entryCount: number;
   isDeleted: boolean;
   deleteAction?: () => Promise<void>;
+  restoreAction?: () => Promise<void>;
+  permanentlyDeleteAction?: () => Promise<void>;
 };
 
 type SortColumn =
@@ -209,29 +210,37 @@ export default function ProjectsTable({
               </TableCell>
               <TableCell>
                 {project.isDeleted ? (
-                  <Chip color="default" label="Deleted" size="small" />
+                  <Chip color="default" label="In trash" size="small" />
                 ) : (
                   "-"
                 )}
               </TableCell>
               <TableCell>
                 {project.isDeleted ? (
-                  "-"
-                ) : (
-                  <Stack direction="row" spacing={1}>
-                    {project.deleteAction ? (
-                      <Box component="form" action={project.deleteAction}>
-                        <Button
-                          color="error"
-                          size="small"
-                          type="submit"
-                          variant="outlined"
-                        >
-                          Delete
-                        </Button>
-                      </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    {project.restoreAction ? (
+                      <TableRowAction
+                        action={project.restoreAction}
+                        entity="project"
+                        type="restore"
+                      />
+                    ) : null}
+                    {project.permanentlyDeleteAction ? (
+                      <TableRowAction
+                        action={project.permanentlyDeleteAction}
+                        entity="project"
+                        type="deletePermanently"
+                      />
                     ) : null}
                   </Stack>
+                ) : (
+                  project.deleteAction ? (
+                    <TableRowAction
+                      action={project.deleteAction}
+                      entity="project"
+                      type="delete"
+                    />
+                  ) : null
                 )}
               </TableCell>
             </TableRow>

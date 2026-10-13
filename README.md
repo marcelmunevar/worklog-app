@@ -7,7 +7,7 @@ A work tracking app for recording daily work against projects and clients. It is
 - Create and manage clients and projects.
 - Record daily entries with a work date, project, title, description, and optional client associations.
 - Filter entries by date range.
-- Soft-delete entries, projects, and clients, with controls to view deleted records.
+- Move entries, projects, and clients to trash, with controls to restore or permanently delete entries.
 - Sign in with GitHub.
 
 ## Requirements

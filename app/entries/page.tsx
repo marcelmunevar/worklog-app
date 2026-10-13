@@ -9,7 +9,7 @@ import { db } from "@/db";
 import { clients, dailyEntries, entryClients, projects } from "@/db/schema";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import { and, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, isNull, lte, sql } from "drizzle-orm";
 
 type EntriesPageProps = {
   searchParams: Promise<{
@@ -48,12 +48,14 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
     eq(dailyEntries.worklogId, worklogId),
     dateFilter.isActive
       ? and(
-          showDeleted ? undefined : isNull(dailyEntries.deletedAt),
+          showDeleted
+            ? isNotNull(dailyEntries.deletedAt)
+            : isNull(dailyEntries.deletedAt),
           gte(dailyEntries.workDate, dateFilter.dateFrom),
           lte(dailyEntries.workDate, dateFilter.dateTo),
         )
       : showDeleted
-        ? undefined
+        ? isNotNull(dailyEntries.deletedAt)
         : isNull(dailyEntries.deletedAt),
   );
 
@@ -242,7 +244,9 @@ export default async function EntriesPage({ searchParams }: EntriesPageProps) {
 
       {entries.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
-          <Typography color="text.secondary">No entries yet.</Typography>
+          <Typography color="text.secondary">
+            {showDeleted ? "Trash is empty." : "No entries yet."}
+          </Typography>
         </Paper>
       ) : (
         <EntriesTable rows={entryRows} projects={projectOptions} />

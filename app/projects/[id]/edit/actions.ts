@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { clients, projectClients, projects } from "@/db/schema";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { clients, dailyEntries, projectClients, projects } from "@/db/schema";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -234,4 +234,83 @@ export async function deleteProject(projectId: string) {
   revalidatePath("/clients");
 
   redirect("/projects");
+}
+
+export async function restoreProject(projectId: string) {
+  const worklogId = await requireWorklogId();
+  const [restoredProject] = await db
+    .update(projects)
+    .set({ deletedAt: null })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.worklogId, worklogId),
+        isNotNull(projects.deletedAt),
+      ),
+    )
+    .returning({ id: projects.id });
+
+  if (!restoredProject) {
+    throw new Error("Project in trash is no longer available to restore.");
+  }
+
+  revalidatePath("/projects");
+  revalidatePath("/entries");
+  revalidatePath("/clients");
+}
+
+export async function permanentlyDeleteProject(projectId: string) {
+  const worklogId = await requireWorklogId();
+  const [projectInTrash] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.worklogId, worklogId),
+        isNotNull(projects.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!projectInTrash) {
+    throw new Error("Only projects in the trash can be permanently deleted.");
+  }
+
+  const [linkedEntry] = await db
+    .select({ id: dailyEntries.id })
+    .from(dailyEntries)
+    .where(
+      and(
+        eq(dailyEntries.projectId, projectId),
+        eq(dailyEntries.worklogId, worklogId),
+      ),
+    )
+    .limit(1);
+
+  if (linkedEntry) {
+    redirect("/projects?showDeleted=true&trashError=linked-entries");
+  }
+
+  await db
+    .delete(projectClients)
+    .where(eq(projectClients.projectId, projectId));
+  const [removedProject] = await db
+    .delete(projects)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.worklogId, worklogId),
+        isNotNull(projects.deletedAt),
+      ),
+    )
+    .returning({ id: projects.id });
+
+  if (!removedProject) {
+    throw new Error("Project in trash is no longer available to remove.");
+  }
+
+  revalidatePath("/projects");
+  revalidatePath("/entries");
+  revalidatePath("/clients");
 }

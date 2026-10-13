@@ -10,7 +10,7 @@ type ShowDeletedToggleProps = {
 
 export default function ShowDeletedToggle({
   checked,
-  label = "Show soft deleted entries",
+  label = "Show trash",
 }: ShowDeletedToggleProps) {
   const router = useRouter();
   const pathname = usePathname();

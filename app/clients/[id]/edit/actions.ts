@@ -1,13 +1,29 @@
 "use server";
 
 import { db } from "@/db";
-import { clients } from "@/db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { clients, entryClients, projectClients } from "@/db/schema";
+import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { TableFieldUpdateResult } from "@/app/components/editable-table-cell";
 import { type EditClientFormState } from "./form-state";
+
+async function entryClientsTableExists(): Promise<boolean> {
+  try {
+    const result = await db.execute(
+      sql`select to_regclass('public.entry_clients') as table_name`,
+    );
+    const rows = result.rows as Array<{ table_name: string | null }>;
+    const tableName = rows[0]?.table_name;
+
+    return (
+      tableName === "entry_clients" || tableName === "public.entry_clients"
+    );
+  } catch {
+    return false;
+  }
+}
 
 export async function updateClientField(
   clientId: string,
@@ -119,4 +135,74 @@ export async function deleteClient(clientId: string) {
   revalidatePath("/projects");
 
   redirect("/clients");
+}
+
+export async function restoreClient(clientId: string) {
+  const worklogId = await requireWorklogId();
+  const [restoredClient] = await db
+    .update(clients)
+    .set({ deletedAt: null })
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.worklogId, worklogId),
+        isNotNull(clients.deletedAt),
+      ),
+    )
+    .returning({ id: clients.id });
+
+  if (!restoredClient) {
+    throw new Error("Client in trash is no longer available to restore.");
+  }
+
+  revalidatePath("/clients");
+  revalidatePath("/projects");
+  revalidatePath("/entries");
+}
+
+export async function permanentlyDeleteClient(clientId: string) {
+  const worklogId = await requireWorklogId();
+  const [clientInTrash] = await db
+    .select({ id: clients.id })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.worklogId, worklogId),
+        isNotNull(clients.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!clientInTrash) {
+    throw new Error("Only clients in the trash can be permanently deleted.");
+  }
+
+  if (await entryClientsTableExists()) {
+    await db
+      .delete(entryClients)
+      .where(eq(entryClients.clientId, clientId));
+  }
+  await db
+    .delete(projectClients)
+    .where(eq(projectClients.clientId, clientId));
+
+  const [removedClient] = await db
+    .delete(clients)
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.worklogId, worklogId),
+        isNotNull(clients.deletedAt),
+      ),
+    )
+    .returning({ id: clients.id });
+
+  if (!removedClient) {
+    throw new Error("Client in trash is no longer available to remove.");
+  }
+
+  revalidatePath("/clients");
+  revalidatePath("/projects");
+  revalidatePath("/entries");
 }

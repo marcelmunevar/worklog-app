@@ -7,10 +7,31 @@ import {
 } from "@/app/components/date-filter-utils";
 import NavButton from "@/app/components/nav-button";
 import ShowDeletedToggle from "@/app/entries/show-deleted-toggle";
-import { deleteProject } from "./[id]/edit/actions";
+import {
+  deleteProject,
+  permanentlyDeleteProject,
+  restoreProject,
+} from "./[id]/edit/actions";
 import ProjectsTable from "./projects-table";
-import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import { and, asc, desc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import {
+  Alert,
+  Box,
+  Container,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lte,
+  sql,
+} from "drizzle-orm";
 
 type ProjectsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -45,13 +66,15 @@ export default async function ProjectsPage({
           );
 
           return and(
-            showDeleted ? undefined : isNull(projects.deletedAt),
+            showDeleted
+              ? isNotNull(projects.deletedAt)
+              : isNull(projects.deletedAt),
             gte(projects.createdAt, from),
             lte(projects.createdAt, to),
           );
         })()
       : showDeleted
-        ? undefined
+        ? isNotNull(projects.deletedAt)
         : isNull(projects.deletedAt),
   );
 
@@ -141,6 +164,12 @@ export default async function ProjectsPage({
     deleteAction: project.deletedAt
       ? undefined
       : deleteProject.bind(null, project.id),
+    restoreAction: project.deletedAt
+      ? restoreProject.bind(null, project.id)
+      : undefined,
+    permanentlyDeleteAction: project.deletedAt
+      ? permanentlyDeleteProject.bind(null, project.id)
+      : undefined,
   }));
 
   return (
@@ -175,9 +204,18 @@ export default async function ProjectsPage({
         </Stack>
       </Box>
 
+      {resolvedSearchParams.trashError === "linked-entries" ? (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          This project still has entries. Move or remove those entries before
+          permanently deleting the project.
+        </Alert>
+      ) : null}
+
       {projectList.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 3 }}>
-          <Typography color="text.secondary">No projects yet.</Typography>
+          <Typography color="text.secondary">
+            {showDeleted ? "Trash is empty." : "No projects yet."}
+          </Typography>
         </Paper>
       ) : (
         <ProjectsTable rows={projectRows} availableClients={availableClients} />
@@ -186,7 +224,7 @@ export default async function ProjectsPage({
       <Box sx={{ mt: 1.5 }}>
         <ShowDeletedToggle
           checked={showDeleted}
-          label="Show soft deleted projects"
+          label="Show project trash"
         />
       </Box>
     </Container>

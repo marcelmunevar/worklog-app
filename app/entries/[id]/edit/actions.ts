@@ -8,7 +8,7 @@ import {
   projectClients,
   projects,
 } from "@/db/schema";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { requireWorklogId } from "@/lib/worklog-access";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -449,4 +449,69 @@ export async function deleteEntry(entryId: string) {
   revalidatePath("/projects");
 
   redirect("/entries");
+}
+
+export async function restoreEntry(entryId: string) {
+  const worklogId = await requireWorklogId();
+  const [restoredEntry] = await db
+    .update(dailyEntries)
+    .set({ deletedAt: null })
+    .where(
+      and(
+        eq(dailyEntries.id, entryId),
+        eq(dailyEntries.worklogId, worklogId),
+        isNotNull(dailyEntries.deletedAt),
+      ),
+    )
+    .returning({ id: dailyEntries.id });
+
+  if (!restoredEntry) {
+    throw new Error("Deleted entry is no longer available to restore.");
+  }
+
+  revalidatePath("/entries");
+  revalidatePath("/projects");
+}
+
+export async function permanentlyDeleteEntry(entryId: string) {
+  const worklogId = await requireWorklogId();
+  const [deletedEntry] = await db
+    .select({ id: dailyEntries.id })
+    .from(dailyEntries)
+    .where(
+      and(
+        eq(dailyEntries.id, entryId),
+        eq(dailyEntries.worklogId, worklogId),
+        isNotNull(dailyEntries.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!deletedEntry) {
+    throw new Error("Only entries in the trash can be permanently deleted.");
+  }
+
+  if (await entryClientsTableExists()) {
+    await db
+      .delete(entryClients)
+      .where(eq(entryClients.dailyEntryId, entryId));
+  }
+
+  const [removedEntry] = await db
+    .delete(dailyEntries)
+    .where(
+      and(
+        eq(dailyEntries.id, entryId),
+        eq(dailyEntries.worklogId, worklogId),
+        isNotNull(dailyEntries.deletedAt),
+      ),
+    )
+    .returning({ id: dailyEntries.id });
+
+  if (!removedEntry) {
+    throw new Error("Deleted entry is no longer available to remove.");
+  }
+
+  revalidatePath("/entries");
+  revalidatePath("/projects");
 }
